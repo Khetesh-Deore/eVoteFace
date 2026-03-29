@@ -4,6 +4,7 @@ import os
 import base64
 import numpy as np
 import cv2
+from datetime import datetime
 from deepface import DeepFace
 from dotenv import load_dotenv
 
@@ -40,7 +41,13 @@ def cosine_distance(a, b):
 
 @app.route('/health', methods=['GET'])
 def health():
-    return jsonify({'status': 'AI Service running'})
+    """Health check endpoint"""
+    return jsonify({
+        'status': 'ok',
+        'service': 'eVoteFace AI',
+        'timestamp': datetime.utcnow().isoformat(),
+        'version': '1.0.0'
+    }), 200
 
 @app.route('/encode', methods=['POST'])
 def encode():

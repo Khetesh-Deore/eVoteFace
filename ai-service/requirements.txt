@@ -1,8 +1,23 @@
-flask==3.0.0
+# eVoteFace AI Service Requirements
+
+# Web Framework
+Flask==3.0.0
 flask-cors==4.0.0
+gunicorn==21.2.0
+
+# Face Recognition & Computer Vision
 deepface==0.0.99
 opencv-python==4.8.0.74
 numpy==1.24.3
-pillow==10.0.0
+Pillow==10.0.0
+
+# Deep Learning Backend (TensorFlow)
+tensorflow==2.13.0
+keras==2.13.0
+
+# Utilities
 python-dotenv==1.0.0
-gunicorn==21.2.0
+requests==2.31.0
+
+# Optional: For production deployment
+python-multipart==0.0.6
