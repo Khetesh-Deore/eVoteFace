@@ -1,130 +1,162 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
-import { Layout } from './components/layout'
 import { ProtectedRoute, AdminRoute } from './components/ProtectedRoute'
+import { Layout } from './components/layout'
+
+// Public Pages
+import { LandingPage } from './pages/public/LandingPage'
+import { LoginPage } from './pages/public/LoginPage'
+import { RegisterPage } from './pages/public/RegisterPage'
+
+// Voter Pages
+import { DashboardPage } from './pages/voter/DashboardPage'
+import { FaceVerificationPage } from './pages/voter/FaceVerificationPage'
+import { VotingPage } from './pages/voter/VotingPage'
+import { ResultsPage } from './pages/voter/ResultsPage'
+import { ReceiptPage } from './pages/voter/ReceiptPage'
+
+// Admin Pages
+import { AdminLoginPage } from './pages/admin/AdminLoginPage'
+import { AdminDashboardPage } from './pages/admin/AdminDashboardPage'
+import { AdminCandidatesPage } from './pages/admin/AdminCandidatesPage'
+import { AdminVotersPage } from './pages/admin/AdminVotersPage'
+import { AdminElectionPage } from './pages/admin/AdminElectionPage'
+import { AdminAuditPage } from './pages/admin/AdminAuditPage'
 
 function App() {
   return (
     <Router>
       <AuthProvider>
         <Routes>
-          {/* Public routes - no layout */}
-          <Route path="/login" element={<div>Login Page</div>} />
-          <Route path="/register" element={<div>Register Page</div>} />
+          {/* Public Routes - No Layout */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/admin/login" element={<AdminLoginPage />} />
 
-          {/* Protected routes with layout */}
+          {/* Landing Page */}
           <Route
             path="/"
             element={
               <Layout>
-                <div>Home</div>
+                <LandingPage />
               </Layout>
             }
           />
 
-          {/* Voter routes */}
+          {/* Voter Routes - Protected */}
           <Route
             path="/dashboard"
             element={
               <ProtectedRoute>
                 <Layout>
-                  <div>Voter Dashboard</div>
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/vote"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <div>Voting Page</div>
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/results"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <div>Results</div>
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/receipt"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <div>Vote Receipt</div>
+                  <DashboardPage />
                 </Layout>
               </ProtectedRoute>
             }
           />
 
-          {/* Admin routes */}
+          <Route
+            path="/verify"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <FaceVerificationPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/vote"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <VotingPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/results"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ResultsPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/receipt"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ReceiptPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Admin Routes - Protected */}
           <Route
             path="/admin"
             element={
               <AdminRoute>
                 <Layout>
-                  <div>Admin Dashboard</div>
+                  <AdminDashboardPage />
                 </Layout>
               </AdminRoute>
             }
           />
-          <Route
-            path="/admin/voters"
-            element={
-              <AdminRoute>
-                <Layout>
-                  <div>Manage Voters</div>
-                </Layout>
-              </AdminRoute>
-            }
-          />
+
           <Route
             path="/admin/candidates"
             element={
               <AdminRoute>
                 <Layout>
-                  <div>Manage Candidates</div>
+                  <AdminCandidatesPage />
                 </Layout>
               </AdminRoute>
             }
           />
+
+          <Route
+            path="/admin/voters"
+            element={
+              <AdminRoute>
+                <Layout>
+                  <AdminVotersPage />
+                </Layout>
+              </AdminRoute>
+            }
+          />
+
           <Route
             path="/admin/election"
             element={
               <AdminRoute>
                 <Layout>
-                  <div>Election Management</div>
+                  <AdminElectionPage />
                 </Layout>
               </AdminRoute>
             }
           />
-          <Route
-            path="/admin/results"
-            element={
-              <AdminRoute>
-                <Layout>
-                  <div>Admin Results</div>
-                </Layout>
-              </AdminRoute>
-            }
-          />
+
           <Route
             path="/admin/audit"
             element={
               <AdminRoute>
                 <Layout>
-                  <div>Audit Log</div>
+                  <AdminAuditPage />
                 </Layout>
               </AdminRoute>
             }
           />
+
+          {/* 404 - Catch all */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
     </Router>
