@@ -12,4 +12,7 @@ export const voteService = {
 
   getLiveResults: () =>
     api.get('/vote/results/live'),
+
+  verifyFace: (imageBase64) =>
+    api.post('/vote/verify', { image: imageBase64 }),
 }
