@@ -1,50 +1,101 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 export default function Navbar() {
   const { user, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [open, setOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
+  const handleLogout = () => { logout(); navigate("/"); setOpen(false); };
+  const close = () => setOpen(false);
+  const isActive = (path) => location.pathname === path;
+
+  const navLink = (to, label) => (
+    <Link to={to} onClick={close}
+      className={`hover:text-accent transition-colors ${isActive(to) ? "text-accent font-semibold" : ""}`}>
+      {label}
+    </Link>
+  );
 
   return (
-    <nav className="bg-primary text-white shadow-md">
+    <nav className="bg-primary text-white shadow-md sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-1.5" onClick={close}>
           <span className="text-accent font-bold text-xl">e</span>
           <span className="font-bold text-lg tracking-wide">VoteFace</span>
-          <span className="hidden sm:block text-xs text-blue-200 ml-1">| Secure Digital Voting</span>
+          <span className="hidden md:block text-xs text-blue-300 ml-1 border-l border-blue-400 pl-2">
+            Secure Digital Voting
+          </span>
         </Link>
 
-        {/* Nav links */}
-        <div className="flex items-center gap-4 text-sm">
-          <Link to="/results" className="hover:text-accent transition-colors">Results</Link>
-
+        {/* Desktop nav */}
+        <div className="hidden sm:flex items-center gap-5 text-sm">
+          {navLink("/results", "Results")}
           {!user ? (
             <>
-              <Link to="/login" className="hover:text-accent transition-colors">Login</Link>
-              <Link to="/register" className="bg-accent text-white px-4 py-1.5 rounded hover:bg-orange-700 transition-colors">
+              {navLink("/login", "Login")}
+              <Link to="/register"
+                className="bg-accent text-white px-4 py-1.5 rounded hover:bg-orange-700 transition-colors font-medium">
                 Register
               </Link>
             </>
           ) : isAdmin ? (
             <>
-              <Link to="/admin/dashboard" className="hover:text-accent transition-colors">Admin Panel</Link>
+              {navLink("/admin/dashboard", "Dashboard")}
+              {navLink("/admin/voters", "Voters")}
+              {navLink("/admin/candidates", "Candidates")}
               <button onClick={handleLogout} className="hover:text-accent transition-colors">Logout</button>
             </>
           ) : (
             <>
-              <Link to="/dashboard" className="hover:text-accent transition-colors">Dashboard</Link>
-              <Link to="/vote" className="hover:text-accent transition-colors">Vote</Link>
+              {navLink("/dashboard", "My Dashboard")}
+              {navLink("/vote", "Vote")}
               <button onClick={handleLogout} className="hover:text-accent transition-colors">Logout</button>
             </>
           )}
         </div>
+
+        {/* Mobile hamburger */}
+        <button className="sm:hidden p-2 rounded hover:bg-white/10 transition-colors"
+          onClick={() => setOpen(!open)} aria-label="Toggle menu">
+          <div className="space-y-1">
+            <span className={`block w-5 h-0.5 bg-white transition-transform ${open ? "rotate-45 translate-y-1.5" : ""}`} />
+            <span className={`block w-5 h-0.5 bg-white transition-opacity ${open ? "opacity-0" : ""}`} />
+            <span className={`block w-5 h-0.5 bg-white transition-transform ${open ? "-rotate-45 -translate-y-1.5" : ""}`} />
+          </div>
+        </button>
       </div>
+
+      {/* Mobile menu */}
+      {open && (
+        <div className="sm:hidden bg-blue-900 border-t border-blue-700 px-4 py-3 space-y-3 text-sm">
+          {navLink("/results", "📊 Results")}
+          {!user ? (
+            <>
+              {navLink("/login", "🔑 Login")}
+              {navLink("/register", "📝 Register")}
+            </>
+          ) : isAdmin ? (
+            <>
+              {navLink("/admin/dashboard", "🏠 Dashboard")}
+              {navLink("/admin/voters", "👥 Voters")}
+              {navLink("/admin/candidates", "🏛️ Candidates")}
+              {navLink("/admin/face", "📷 Face Registration")}
+              {navLink("/admin/election", "⚙️ Election Control")}
+              <button onClick={handleLogout} className="block text-left hover:text-accent">🚪 Logout</button>
+            </>
+          ) : (
+            <>
+              {navLink("/dashboard", "🏠 My Dashboard")}
+              {navLink("/vote", "🗳️ Cast Vote")}
+              <button onClick={handleLogout} className="block text-left hover:text-accent">🚪 Logout</button>
+            </>
+          )}
+        </div>
+      )}
     </nav>
   );
 }

@@ -47,6 +47,15 @@ export default function VotingPage() {
         if (res.data.phase !== "Voting") {
           toast.error("Voting is not currently open");
           navigate("/dashboard");
+          return;
+        }
+        // Check voter eligibility
+        const statusRes = await api.get("/voters/status");
+        if (!statusRes.data.isVerified) {
+          toast.error("Your account is not approved yet"); navigate("/dashboard"); return;
+        }
+        if (statusRes.data.hasVoted) {
+          toast.error("You have already voted"); navigate("/dashboard"); return;
         }
       } catch { navigate("/dashboard"); }
       finally { setLoading(false); }
