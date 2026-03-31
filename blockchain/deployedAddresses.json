@@ -1,0 +1,16 @@
+{
+  "localhost": {
+    "contractAddress": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+    "deployerAddress": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "deployedAt": "2026-03-31T10:00:41.501Z",
+    "transactionHash": "0xd5d373e4e9baf164826e00258a06927776ae980f1bc6fc7adf5fbf048d70c129",
+    "chainId": 31337
+  },
+  "sepolia": {
+    "contractAddress": "0xe2e2B34120818bE49a58e20F2429022EcDbc0f7e",
+    "deployerAddress": "0x5b979D566867F2f5abaEE5d51292E1bd1740f103",
+    "deployedAt": "2026-03-31T10:05:54.784Z",
+    "transactionHash": "0x1e2d3494f918203b1a4ad9191287613d933d556859fe593c030c7317dfb3ae14",
+    "chainId": 11155111
+  }
+}
