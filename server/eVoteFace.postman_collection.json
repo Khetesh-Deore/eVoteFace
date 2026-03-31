@@ -1,0 +1,333 @@
+{
+  "info": {
+    "name": "eVoteFace API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base", "value": "http://localhost:5000/api" },
+    { "key": "voterToken", "value": "" },
+    { "key": "adminToken", "value": "" },
+    { "key": "voterId", "value": "" },
+    { "key": "faceVerifiedToken", "value": "" },
+    { "key": "voteAuthToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register Voter",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/auth/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Test Voter\",\n  \"email\": \"testvoter@gmail.com\",\n  \"password\": \"Test@1234\",\n  \"voterID\": \"VTR002\",\n  \"aadharNumber\": \"987654321098\",\n  \"age\": 25,\n  \"gender\": \"Male\",\n  \"address\": \"456 Test Street\",\n  \"state\": \"Maharashtra\",\n  \"city\": \"Pune\",\n  \"pincode\": \"411001\",\n  \"contactNumber\": \"9123456780\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Voter Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if(r.token) { pm.collectionVariables.set('voterToken', r.token); pm.collectionVariables.set('voterId', r.user.id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"voterID\": \"VTR001\",\n  \"password\": \"Test@1234\"\n}" }
+          }
+        },
+        {
+          "name": "Admin Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if(r.token) pm.collectionVariables.set('adminToken', r.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/auth/admin/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@evoteface.com\",\n  \"password\": \"Admin@2025\"\n}" }
+          }
+        },
+        {
+          "name": "GET /me",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/auth/me",
+            "header": [{ "key": "Authorization", "value": "Bearer {{voterToken}}" }]
+          }
+        },
+        {
+          "name": "Login Wrong Password (expect 401)",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"voterID\": \"VTR001\",\n  \"password\": \"wrongpassword\"\n}" }
+          }
+        },
+        {
+          "name": "Protected Route No Token (expect 401)",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/auth/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Voter",
+      "item": [
+        {
+          "name": "GET Profile",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/voters/profile",
+            "header": [{ "key": "Authorization", "value": "Bearer {{voterToken}}" }]
+          }
+        },
+        {
+          "name": "POST Save Wallet",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/voters/wallet",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{voterToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"walletAddress\": \"0x5b979D566867F2f5abaEE5d51292E1bd1740f103\"\n}" }
+          }
+        },
+        {
+          "name": "GET Status",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/voters/status",
+            "header": [{ "key": "Authorization", "value": "Bearer {{voterToken}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin — Voters",
+      "item": [
+        {
+          "name": "GET All Voters",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/admin/voters",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }]
+          }
+        },
+        {
+          "name": "GET Voters with Search",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base}}/admin/voters?search=khetesh&page=1&limit=10" },
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }]
+          }
+        },
+        {
+          "name": "POST Approve Voter",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/admin/voters/{{voterId}}/approve",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }]
+          }
+        },
+        {
+          "name": "POST Register Voter On-Chain",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/admin/voters/{{voterId}}/register-onchain",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"walletAddress\": \"0x5b979D566867F2f5abaEE5d51292E1bd1740f103\"\n}" }
+          }
+        },
+        {
+          "name": "POST Upload Face (form-data)",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/admin/voters/{{voterId}}/face",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "image", "type": "file", "src": "" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin — Candidates",
+      "item": [
+        {
+          "name": "POST Add Candidate",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/admin/candidates",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Test Candidate\",\n  \"partyName\": \"Test Party\",\n  \"partySymbol\": \"https://example.com/logo.png\"\n}" }
+          }
+        },
+        {
+          "name": "GET All Candidates",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/admin/candidates",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin — Election",
+      "item": [
+        {
+          "name": "GET Election Info",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/admin/election",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }]
+          }
+        },
+        {
+          "name": "GET Admin Results",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/admin/results",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Face",
+      "item": [
+        {
+          "name": "POST Verify Face",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if(r.faceVerifiedToken) pm.collectionVariables.set('faceVerifiedToken', r.faceVerifiedToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/face/verify",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{voterToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"liveImageBase64\": \"data:image/jpeg;base64,PASTE_BASE64_HERE\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "OTP",
+      "item": [
+        {
+          "name": "POST Send OTP",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/otp/send",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{voterToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"faceVerifiedToken\": \"{{faceVerifiedToken}}\"\n}" }
+          }
+        },
+        {
+          "name": "POST Verify OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if(r.voteAuthToken) pm.collectionVariables.set('voteAuthToken', r.voteAuthToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/otp/verify",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{voterToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"ENTER_OTP_FROM_EMAIL\"\n}" }
+          }
+        },
+        {
+          "name": "POST Verify Wrong OTP (expect 400)",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/otp/verify",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{voterToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"000000\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Votes",
+      "item": [
+        {
+          "name": "GET Results (public)",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/votes/results"
+          }
+        },
+        {
+          "name": "POST Record Vote",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/votes/record",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{voterToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"candidateId\": 1,\n  \"txHash\": \"PASTE_TX_HASH_FROM_METAMASK\",\n  \"voteAuthToken\": \"{{voteAuthToken}}\"\n}" }
+          }
+        }
+      ]
+    }
+  ]
+}
