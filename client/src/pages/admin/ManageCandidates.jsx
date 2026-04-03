@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "react-toastify";
 import api from "../../utils/api";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
@@ -10,7 +10,7 @@ export default function ManageCandidates() {
   const [phase, setPhase] = useState(null);
   const [form, setForm] = useState({ name: "", partyName: "", partySymbol: "" });
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const [cRes, eRes] = await Promise.all([
@@ -21,9 +21,9 @@ export default function ManageCandidates() {
       setPhase(eRes.data.onChain?.phase);
     } catch { toast.error("Failed to load"); }
     finally { setLoading(false); }
-  };
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   const addCandidate = async (e) => {
     e.preventDefault();

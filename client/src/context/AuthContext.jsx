@@ -14,7 +14,9 @@ export const AuthProvider = ({ children }) => {
       if (!token) { setLoading(false); return; }
       try {
         const res = await api.get("/auth/me");
-        setUser(res.data.user);
+        // /auth/me returns { user } for voters, check role
+        const userData = res.data.user || res.data.admin;
+        setUser(userData);
       } catch {
         localStorage.removeItem("evf_token");
         setToken(null);

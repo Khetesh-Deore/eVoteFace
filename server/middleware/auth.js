@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const Admin = require("../models/Admin");
 
 const auth = async (req, res, next) => {
   try {
@@ -11,9 +12,17 @@ const auth = async (req, res, next) => {
     const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    // Admin token — look in Admin collection
+    if (decoded.role === "admin" || decoded.role === "superadmin") {
+      const admin = await Admin.findById(decoded.id).select("-password");
+      if (!admin) return res.status(401).json({ message: "Admin not found" });
+      req.user = { ...admin.toObject(), role: admin.role };
+      return next();
+    }
+
+    // Voter token
     const user = await User.findById(decoded.id).select("-password");
     if (!user) return res.status(401).json({ message: "User not found" });
-
     req.user = user;
     next();
   } catch (error) {

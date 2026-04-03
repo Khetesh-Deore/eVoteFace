@@ -16,7 +16,7 @@ const userSchema = new mongoose.Schema(
     contactNumber: { type: String, required: true, match: /^\d{10}$/ },
     faceEncoding:  { type: [Number], default: [], select: false }, // 128-float array from Python
     faceImagePath: { type: String, default: "" },
-    walletAddress: { type: String, default: "" },          // unique sparse index below
+    walletAddress: { type: String },                          // unique sparse index below
     role:          { type: String, enum: ["voter", "admin"], default: "voter" },
     isVerified:    { type: Boolean, default: false },      // admin must approve
     hasVoted:      { type: Boolean, default: false },

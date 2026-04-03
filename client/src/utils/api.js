@@ -17,9 +17,16 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
-      // Token expired — clear storage but don't redirect here
-      // Let components handle redirect
-      localStorage.removeItem("evf_token");
+      // Token expired — clear and let components handle redirect
+      const currentToken = localStorage.getItem("evf_token");
+      if (currentToken) {
+        localStorage.removeItem("evf_token");
+        // Only redirect if not already on auth pages
+        const path = window.location.pathname;
+        if (!path.includes("/login") && !path.includes("/register")) {
+          window.location.href = "/login";
+        }
+      }
     }
     return Promise.reject(err);
   }

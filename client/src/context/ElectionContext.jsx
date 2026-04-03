@@ -26,7 +26,7 @@ export const ElectionProvider = ({ children }) => {
 
   useEffect(() => {
     refresh();
-  }, [refresh]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <ElectionContext.Provider value={{ candidates, totalVotes, phase, winner, loading, refresh }}>

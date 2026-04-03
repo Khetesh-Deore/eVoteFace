@@ -11,6 +11,11 @@ router.use(auth);
 // ─────────────────────────────────────────────
 router.get("/status", async (req, res) => {
   try {
+    // Admins don't have voter status
+    if (req.user.role === "admin" || req.user.role === "superadmin") {
+      return res.status(403).json({ message: "Admins do not have voter status" });
+    }
+
     const user = await User.findById(req.user._id).select("+faceEncoding");
 
     let isRegisteredOnChain = false;

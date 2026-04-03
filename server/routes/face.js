@@ -1,9 +1,16 @@
 const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
+const rateLimit = require("express-rate-limit");
 const auth = require("../middleware/auth");
 const User = require("../models/User");
 const { verifyFace } = require("../utils/faceService");
+
+const faceLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 10,
+  message: { message: "Too many face verification attempts. Please wait 5 minutes." },
+});
 
 // ─────────────────────────────────────────────
 // POST /api/face/verify
@@ -12,7 +19,7 @@ const { verifyFace } = require("../utils/faceService");
 // Flow: get stored encoding from MongoDB → send to Python → return result
 // If match: issue short-lived faceVerifiedToken (5 min) for OTP step
 // ─────────────────────────────────────────────
-router.post("/verify", auth, async (req, res) => {
+router.post("/verify", auth, faceLimiter, async (req, res) => {
   try {
     const { liveImageBase64 } = req.body;
 
@@ -23,7 +30,9 @@ router.post("/verify", auth, async (req, res) => {
     // Get voter with face encoding (excluded by default in auth middleware)
     const user = await User.findById(req.user._id).select("+faceEncoding");
 
-    if (!user.faceEncoding || user.faceEncoding.length !== 128) {
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (!Array.isArray(user.faceEncoding) || user.faceEncoding.length !== 128) {
       return res.status(400).json({
         message: "Face not registered for this voter. Contact admin to register your face.",
       });

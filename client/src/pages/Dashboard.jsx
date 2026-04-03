@@ -29,19 +29,20 @@ export default function Dashboard() {
     load();
   }, []);
 
-  // Auto-save wallet address when MetaMask connects
+  // Auto-save wallet address when MetaMask connects (only if changed)
   useEffect(() => {
-    if (!address || !user || user.walletAddress === address.toLowerCase()) return;
+    if (!address || !user) return;
+    if (user.walletAddress && user.walletAddress.toLowerCase() === address.toLowerCase()) return;
     const save = async () => {
       setSavingWallet(true);
       try {
         await api.post("/voters/wallet", { walletAddress: address });
         setUser(prev => ({ ...prev, walletAddress: address.toLowerCase() }));
-      } catch { /* ignore duplicate */ }
+      } catch { /* wallet may already be registered */ }
       finally { setSavingWallet(false); }
     };
     save();
-  }, [address]);
+  }, [address, user?.walletAddress]);
 
   const canVote = phase === "Voting" && isConnected && isCorrectNetwork &&
     status?.isVerified && !status?.hasVoted && status?.isRegisteredOnChain;

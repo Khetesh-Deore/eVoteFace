@@ -87,7 +87,7 @@ export default function ManageVoters() {
                       {v.walletAddress ? `${v.walletAddress.slice(0,8)}...` : <span className="text-red-400">None</span>}
                     </td>
                     <td className="px-4 py-3">
-                      {v.faceImagePath ? <span className="badge-success">✓</span> : <span className="badge-danger">✗</span>}
+                      {v.faceImagePath ? <span className="badge-success">✓ Registered</span> : <span className="badge-danger">✗ Missing</span>}
                     </td>
                     <td className="px-4 py-3">
                       {v.isVerified ? <span className="badge-success">Approved</span> : <span className="badge-warning">Pending</span>}

@@ -151,10 +151,15 @@ router.post("/admin/login", async (req, res) => {
 
 // ─────────────────────────────────────────────
 // GET /api/auth/me
-// Protected — returns current logged-in user
+// Protected — returns current logged-in user or admin
 // ─────────────────────────────────────────────
 router.get("/me", auth, async (req, res) => {
   try {
+    // req.user is set by auth middleware (works for both voter and admin)
+    const isAdmin = req.user.role === "admin" || req.user.role === "superadmin";
+    if (isAdmin) {
+      return res.status(200).json({ user: req.user });
+    }
     const user = await User.findById(req.user._id).select("-password -faceEncoding");
     if (!user) return res.status(404).json({ message: "User not found" });
     return res.status(200).json({ user });

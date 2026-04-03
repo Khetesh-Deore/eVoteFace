@@ -48,7 +48,7 @@ export default function FaceRegistration() {
       }
 
       await api.post(`/admin/voters/${selectedId}/face`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        // Don't set Content-Type manually — axios sets it with correct boundary for multipart
       });
       toast.success("Face registered successfully!");
       setPreview(null); setCapturedImage(null);

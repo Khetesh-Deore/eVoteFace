@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "react-toastify";
 import api from "../../utils/api";
 import PhaseIndicator from "../../components/common/PhaseIndicator";
@@ -9,16 +9,16 @@ export default function ElectionControl() {
   const [loading, setLoading] = useState(true);
   const [changing, setChanging] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get("/admin/election");
       setElection(res.data);
     } catch { toast.error("Failed to load election info"); }
     finally { setLoading(false); }
-  };
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   const changePhase = async (newPhase) => {
     const confirm = window.confirm(

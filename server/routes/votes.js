@@ -73,7 +73,7 @@ router.post("/record", auth, async (req, res) => {
       return res.status(400).json({ message: "Transaction wallet does not match registered voter wallet" });
     }
 
-    // Step 4: Confirm VoteCast event in logs
+    // Step 4: Confirm VoteCast event in logs and verify candidateId matches
     const contract = getContract();
     const voteCastEvent = receipt.logs
       .map((log) => { try { return contract.interface.parseLog(log); } catch { return null; } })
@@ -81,6 +81,12 @@ router.post("/record", auth, async (req, res) => {
 
     if (!voteCastEvent) {
       return res.status(400).json({ message: "VoteCast event not found in transaction logs" });
+    }
+
+    // Verify the candidateId on-chain matches what was submitted
+    const onChainCandidateId = Number(voteCastEvent.args.candidateId);
+    if (onChainCandidateId !== Number(candidateId)) {
+      return res.status(400).json({ message: "Candidate ID mismatch between submission and blockchain" });
     }
 
     // Step 5: Update MongoDB

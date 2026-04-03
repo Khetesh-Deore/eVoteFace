@@ -26,7 +26,6 @@ export default function VotingPage() {
   const [faceLoading, setFaceLoading] = useState(false);
   const [faceResult, setFaceResult] = useState(null);
   const [faceVerifiedToken, setFaceVerifiedToken] = useState(null);
-  const [capturedImage, setCapturedImage] = useState(null);
 
   // OTP step
   const [otpSending, setOtpSending] = useState(false);
@@ -49,7 +48,6 @@ export default function VotingPage() {
           navigate("/dashboard");
           return;
         }
-        // Check voter eligibility
         const statusRes = await api.get("/voters/status");
         if (!statusRes.data.isVerified) {
           toast.error("Your account is not approved yet"); navigate("/dashboard"); return;
@@ -61,7 +59,7 @@ export default function VotingPage() {
       finally { setLoading(false); }
     };
     load();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Step 0: Wallet verification
   const verifyWallet = async () => {

@@ -91,6 +91,11 @@ router.post("/voters/:id/register-onchain", async (req, res) => {
       return res.status(400).json({ message: "walletAddress is required" });
     }
 
+    // Validate Ethereum address format
+    if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+      return res.status(400).json({ message: "Invalid Ethereum wallet address format" });
+    }
+
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: "Voter not found" });
     if (!user.isVerified) {
@@ -179,7 +184,12 @@ router.post("/candidates", async (req, res) => {
       .map((log) => { try { return contract.interface.parseLog(log); } catch { return null; } })
       .find((e) => e && e.name === "CandidateAdded");
 
-    const onChainId = event ? Number(event.args.candidateId) : null;
+    // Fallback: read totalCandidates from contract if event parsing fails
+    let onChainId = event ? Number(event.args.candidateId) : null;
+    if (!onChainId) {
+      const total = await contract.totalCandidates();
+      onChainId = Number(total);
+    }
 
     const candidate = await Candidate.create({ name, partyName, partySymbol: partySymbol || "", onChainId });
 
