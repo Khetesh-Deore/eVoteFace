@@ -24,11 +24,16 @@ router.get("/status", async (req, res) => {
     if (user.walletAddress) {
       try {
         const contract = getContract();
-        const status = await contract.getVoterStatus(user.walletAddress);
+        // Add timeout to prevent hanging
+        const statusPromise = contract.getVoterStatus(user.walletAddress);
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("timeout")), 8000)
+        );
+        const status = await Promise.race([statusPromise, timeoutPromise]);
         isRegisteredOnChain = status.isRegistered;
         hasVotedOnChain = status.hasVoted;
       } catch {
-        // Contract call failed — not critical
+        // Contract call failed or timed out — not critical, show as pending
       }
     }
 
@@ -69,9 +74,12 @@ router.post("/wallet", async (req, res) => {
       _id: { $ne: req.user._id },
     });
     if (existing) {
-      return res.status(409).json({ message: "Wallet address already registered to another voter" });
+      return res.status(409).json({
+        message: `This wallet is already registered to voter: ${existing.voterID}. Each voter must use a unique wallet address.`
+      });
     }
 
+    // If voter already has a different wallet, update it
     const user = await User.findByIdAndUpdate(
       req.user._id,
       { walletAddress: walletAddress.toLowerCase() },

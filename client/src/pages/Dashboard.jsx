@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
-import { useWallet } from "../context/WalletContext";import api from "../utils/api";
+import { useWallet } from "../context/WalletContext";
+import api from "../utils/api";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import PhaseIndicator from "../components/common/PhaseIndicator";
 import MetaMaskConnect from "../components/voter/MetaMaskConnect";
@@ -13,36 +15,51 @@ export default function Dashboard() {
   const [phase, setPhase] = useState(null);
   const [loading, setLoading] = useState(true);
   const [savingWallet, setSavingWallet] = useState(false);
+  const [walletError, setWalletError] = useState(null);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const [statusRes, resultsRes] = await Promise.all([
-          api.get("/voters/status"),
-          api.get("/votes/results"),
-        ]);
-        setStatus(statusRes.data);
-        setPhase(resultsRes.data.phase);
-      } catch { /* silent */ }
-      finally { setLoading(false); }
-    };
-    load();
+  const loadStatus = useCallback(async () => {
+    try {
+      const [statusRes, resultsRes] = await Promise.all([
+        api.get("/voters/status"),
+        api.get("/votes/results"),
+      ]);
+      setStatus(statusRes.data);
+      setPhase(resultsRes.data.phase);
+    } catch { /* silent */ }
+    finally { setLoading(false); }
   }, []);
 
-  // Auto-save wallet address when MetaMask connects (only if changed)
-  useEffect(() => {
-    if (!address || !user) return;
-    if (user.walletAddress && user.walletAddress.toLowerCase() === address.toLowerCase()) return;
-    const save = async () => {
-      setSavingWallet(true);
-      try {
-        await api.post("/voters/wallet", { walletAddress: address });
-        setUser(prev => ({ ...prev, walletAddress: address.toLowerCase() }));
-      } catch { /* wallet may already be registered */ }
-      finally { setSavingWallet(false); }
-    };
-    save();
-  }, [address, user?.walletAddress]);
+  useEffect(() => { loadStatus(); }, [loadStatus]);
+
+  // Save wallet address manually — called by button only
+  const saveWallet = async () => {
+    if (!address) return;
+    setSavingWallet(true);
+    setWalletError(null);
+    try {
+      await api.post("/voters/wallet", { walletAddress: address });
+      setUser(prev => ({ ...prev, walletAddress: address.toLowerCase() }));
+      toast.success("Wallet address saved successfully!");
+      // Refresh status to check on-chain registration
+      await loadStatus();
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to save wallet";
+      setWalletError(msg);
+      toast.error(msg);
+    } finally {
+      setSavingWallet(false);
+    }
+  };
+
+  const refreshStatus = async () => {
+    setLoading(true);
+    await loadStatus();
+    toast.info("Status refreshed");
+  };
+
+  const walletSaved = user?.walletAddress &&
+    address &&
+    user.walletAddress.toLowerCase() === address.toLowerCase();
 
   const canVote = phase === "Voting" && isConnected && isCorrectNetwork &&
     status?.isVerified && !status?.hasVoted && status?.isRegisteredOnChain;
@@ -79,46 +96,132 @@ export default function Dashboard() {
                 <span className="font-medium text-right">{v || "—"}</span>
               </div>
             ))}
+            {user?.walletAddress && (
+              <div className="flex justify-between border-b border-gray-50 pb-1">
+                <span className="text-gray-500">Wallet</span>
+                <span className="font-mono text-xs text-gray-600">
+                  {user.walletAddress.slice(0, 10)}...{user.walletAddress.slice(-6)}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Voting Status */}
         <div className="card">
-          <h2 className="font-semibold text-primary mb-4 flex items-center gap-2">
-            <span>📋</span> Voting Status
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-primary flex items-center gap-2">
+              <span>📋</span> Voting Status
+            </h2>
+            <button onClick={refreshStatus} className="text-xs text-primary hover:underline">
+              ↻ Refresh
+            </button>
+          </div>
           <div className="space-y-3">
             <StatusRow label="Account Approved" ok={status?.isVerified} />
             <StatusRow label="Face Registered" ok={status?.faceRegistered} />
+            <StatusRow label="Wallet Saved" ok={!!user?.walletAddress} />
             <StatusRow label="Registered On-Chain" ok={status?.isRegisteredOnChain} />
             <StatusRow label="MetaMask Connected" ok={isConnected && isCorrectNetwork} />
             {status?.hasVoted ? (
               <div className="mt-3 bg-green-50 border border-green-200 rounded p-3 text-sm text-green-800">
                 ✅ You have successfully cast your vote.
-                {status.votedAt && <span className="block text-xs mt-1 text-green-600">
-                  Voted on: {new Date(status.votedAt).toLocaleString("en-IN")}
-                </span>}
+                {status.votedAt && (
+                  <span className="block text-xs mt-1 text-green-600">
+                    Voted on: {new Date(status.votedAt).toLocaleString("en-IN")}
+                  </span>
+                )}
               </div>
             ) : (
-              <div className={`mt-3 rounded p-3 text-sm ${canVote ? "bg-green-50 border border-green-200 text-green-800" : "bg-gray-50 border border-gray-200 text-gray-600"}`}>
+              <div className={`mt-3 rounded p-3 text-sm ${canVote
+                ? "bg-green-50 border border-green-200 text-green-800"
+                : "bg-gray-50 border border-gray-200 text-gray-600"}`}>
                 {canVote ? "✅ You are eligible to vote!" : "⏳ Complete all steps above to vote."}
               </div>
             )}
           </div>
         </div>
 
-        {/* MetaMask */}
+        {/* MetaMask Wallet */}
         <div className="card">
           <h2 className="font-semibold text-primary mb-4 flex items-center gap-2">
             <span>🦊</span> MetaMask Wallet
           </h2>
           <div className="space-y-3">
+            {/* Connect button */}
             <MetaMaskConnect />
-            {savingWallet && <p className="text-xs text-blue-500">Saving wallet address...</p>}
+
+            {/* Wallet status after connecting */}
             {isConnected && isCorrectNetwork && (
-              status?.isRegisteredOnChain
-                ? <p className="badge-success mt-2">✓ Registered on blockchain</p>
-                : <p className="text-xs text-yellow-600 mt-2">⏳ Awaiting admin to register on-chain</p>
+              <div className="space-y-2">
+                {/* Show current connected address */}
+                <div className="bg-gray-50 rounded p-2 text-xs font-mono text-gray-600 break-all">
+                  {address}
+                </div>
+
+                {/* Case 1: Wallet already saved and matches */}
+                {walletSaved && (
+                  <div className="space-y-1">
+                    <p className="badge-success text-xs">✓ Wallet address saved to your account</p>
+                    {status?.isRegisteredOnChain
+                      ? <p className="badge-success text-xs">✓ Registered on Ethereum blockchain</p>
+                      : <p className="text-xs text-yellow-600 bg-yellow-50 border border-yellow-200 rounded p-2">
+                          ⏳ Awaiting admin to register your wallet on-chain.
+                          Contact the election administrator.
+                        </p>
+                    }
+                  </div>
+                )}
+
+                {/* Case 2: Wallet not saved yet */}
+                {!user?.walletAddress && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-gray-600">
+                      Save this wallet address to your voter account so the admin can register you on-chain.
+                    </p>
+                    <button
+                      onClick={saveWallet}
+                      disabled={savingWallet}
+                      className="btn-primary w-full text-sm py-2">
+                      {savingWallet ? "Saving..." : "💾 Save Wallet Address"}
+                    </button>
+                    {walletError && (
+                      <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded p-2">
+                        ⚠️ {walletError}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Case 3: Different wallet connected than saved */}
+                {user?.walletAddress && !walletSaved && (
+                  <div className="space-y-2">
+                    <div className="bg-yellow-50 border border-yellow-200 rounded p-2 text-xs text-yellow-800">
+                      ⚠️ Connected wallet is different from your saved wallet.
+                      <br />
+                      Saved: <span className="font-mono">{user.walletAddress.slice(0, 10)}...</span>
+                    </div>
+                    <button
+                      onClick={saveWallet}
+                      disabled={savingWallet}
+                      className="btn-outline w-full text-sm py-2">
+                      {savingWallet ? "Updating..." : "🔄 Update Wallet Address"}
+                    </button>
+                    {walletError && (
+                      <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded p-2">
+                        ⚠️ {walletError}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Not connected */}
+            {!isConnected && (
+              <p className="text-xs text-gray-500">
+                Connect MetaMask to save your wallet address and participate in voting.
+              </p>
             )}
           </div>
         </div>
@@ -136,6 +239,16 @@ export default function Dashboard() {
                 ? "Voting has not started yet. Please wait for the election to begin."
                 : "The election has ended. Thank you for participating."}
             </p>
+            {/* Show what's missing */}
+            {!canVote && phase === "Voting" && !status?.hasVoted && (
+              <div className="text-xs text-gray-500 space-y-1 mb-3">
+                {!status?.isVerified && <p>• Account not approved by admin</p>}
+                {!status?.faceRegistered && <p>• Face not registered — contact admin</p>}
+                {!user?.walletAddress && <p>• Wallet address not saved</p>}
+                {!status?.isRegisteredOnChain && user?.walletAddress && <p>• Not registered on-chain — contact admin</p>}
+                {(!isConnected || !isCorrectNetwork) && <p>• MetaMask not connected to Sepolia</p>}
+              </div>
+            )}
           </div>
           {status?.hasVoted ? (
             <div className="btn-primary w-full text-center opacity-50 cursor-not-allowed">

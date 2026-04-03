@@ -57,7 +57,10 @@ export default function ManageVoters() {
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-primary">Voter Management</h1>
-        <span className="badge-info">{total} total voters</span>
+        <div className="flex items-center gap-3">
+          <button onClick={load} className="text-sm text-primary hover:underline">↻ Refresh</button>
+          <span className="badge-info">{total} total voters</span>
+        </div>
       </div>
       <div className="card mb-4">
         <input className="input max-w-sm" placeholder="Search by name, voter ID or email..."
