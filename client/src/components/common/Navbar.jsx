@@ -47,6 +47,9 @@ export default function Navbar() {
               {navLink("/admin/dashboard", "Dashboard")}
               {navLink("/admin/voters", "Voters")}
               {navLink("/admin/candidates", "Candidates")}
+              {navLink("/admin/face", "Faces")}
+              {navLink("/admin/election", "Election")}
+              {navLink("/admin/results", "Results")}
               <button onClick={handleLogout} className="hover:text-accent transition-colors">Logout</button>
             </>
           ) : (

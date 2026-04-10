@@ -53,7 +53,14 @@ export default function VotingPage() {
           toast.error("Your account is not approved yet"); navigate("/dashboard"); return;
         }
         if (statusRes.data.hasVoted) {
-          toast.error("You have already voted"); navigate("/dashboard"); return;
+          toast.info("You have already voted. Redirecting to dashboard...");
+          setTimeout(() => navigate("/dashboard"), 1500);
+          return;
+        }
+        if (!statusRes.data.isRegisteredOnChain) {
+          toast.error("Your wallet is not registered on-chain. Contact admin.");
+          navigate("/dashboard");
+          return;
         }
       } catch { navigate("/dashboard"); }
       finally { setLoading(false); }
@@ -136,11 +143,23 @@ export default function VotingPage() {
       // Record in backend
       await api.post("/votes/record", { candidateId, txHash: hash, voteAuthToken });
       setUser(prev => ({ ...prev, hasVoted: true }));
-      toast.success("🎉 Vote cast successfully!");
+      toast.success("🎉 Vote cast successfully! Redirecting to dashboard...");
+      
+      // Redirect to dashboard after 3 seconds
+      setTimeout(() => navigate("/dashboard"), 3000);
       setStep(4); // success
     } catch (err) {
-      if (err.code === 4001) toast.error("Transaction rejected by user");
-      else toast.error(err.response?.data?.message || err.message || "Voting failed");
+      console.error("Vote error:", err);
+      if (err.code === 4001 || err.code === "ACTION_REJECTED") {
+        toast.error("Transaction rejected by user");
+      } else if (err.message?.includes("already cast their vote")) {
+        toast.error("You have already voted. Redirecting...");
+        setTimeout(() => navigate("/dashboard"), 2000);
+      } else if (err.reason) {
+        toast.error(`Blockchain error: ${err.reason}`);
+      } else {
+        toast.error(err.response?.data?.message || err.message || "Voting failed");
+      }
     } finally { setVoting(false); }
   };
 
@@ -159,7 +178,8 @@ export default function VotingPage() {
             View on Etherscan: {txHash.slice(0, 20)}...
           </a>
         )}
-        <button onClick={() => navigate("/results")} className="btn-primary">View Results →</button>
+        <p className="text-sm text-gray-500 mb-4">Redirecting to dashboard in 3 seconds...</p>
+        <button onClick={() => navigate("/dashboard")} className="btn-primary">Go to Dashboard Now →</button>
       </div>
     );
   }

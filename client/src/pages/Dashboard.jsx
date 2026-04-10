@@ -179,6 +179,12 @@ export default function Dashboard() {
                     <p className="text-xs text-gray-600">
                       Save this wallet address to your voter account so the admin can register you on-chain.
                     </p>
+                    {address?.toLowerCase() === import.meta.env.VITE_ADMIN_WALLET?.toLowerCase() && (
+                      <div className="bg-red-50 border border-red-200 rounded p-2 text-xs text-red-700">
+                        ⚠️ This is the admin/deployer wallet. You cannot vote with it.
+                        Switch to a different MetaMask account (Account 2, 3, etc.)
+                      </div>
+                    )}
                     <button
                       onClick={saveWallet}
                       disabled={savingWallet}

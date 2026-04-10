@@ -7,10 +7,10 @@
     "chainId": 31337
   },
   "sepolia": {
-    "contractAddress": "0xe2e2B34120818bE49a58e20F2429022EcDbc0f7e",
+    "contractAddress": "0xBC41c28F51A0fF6F6C96f9872F8F1046223c63fc",
     "deployerAddress": "0x5b979D566867F2f5abaEE5d51292E1bd1740f103",
-    "deployedAt": "2026-03-31T10:05:54.784Z",
-    "transactionHash": "0x1e2d3494f918203b1a4ad9191287613d933d556859fe593c030c7317dfb3ae14",
+    "deployedAt": "2026-04-03T08:27:30.310Z",
+    "transactionHash": "0x0bf3b57ec59e05e74031fbd07bd97957e4d7af2cf79aa82d41f8b948139e521e",
     "chainId": 11155111
   }
 }

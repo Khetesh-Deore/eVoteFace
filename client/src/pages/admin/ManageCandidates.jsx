@@ -5,6 +5,7 @@ import LoadingSpinner from "../../components/common/LoadingSpinner";
 
 export default function ManageCandidates() {
   const [candidates, setCandidates] = useState([]);
+  const [onChainCandidates, setOnChainCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [phase, setPhase] = useState(null);
@@ -13,12 +14,14 @@ export default function ManageCandidates() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [cRes, eRes] = await Promise.all([
+      const [cRes, eRes, rRes] = await Promise.all([
         api.get("/admin/candidates"),
         api.get("/admin/election"),
+        api.get("/votes/results").catch(() => ({ data: { candidates: [] } })),
       ]);
       setCandidates(cRes.data.candidates);
       setPhase(eRes.data.onChain?.phase);
+      setOnChainCandidates(rRes.data.candidates || []);
     } catch { toast.error("Failed to load"); }
     finally { setLoading(false); }
   }, []);
@@ -27,10 +30,13 @@ export default function ManageCandidates() {
 
   const addCandidate = async (e) => {
     e.preventDefault();
+    if (!form.name.trim() || !form.partyName.trim()) {
+      toast.error("Name and party name are required"); return;
+    }
     setAdding(true);
     try {
       await api.post("/admin/candidates", form);
-      toast.success(`${form.name} added to election`);
+      toast.success(`${form.name} added to election blockchain`);
       setForm({ name: "", partyName: "", partySymbol: "" });
       load();
     } catch (err) { toast.error(err.response?.data?.message || "Failed to add"); }
@@ -38,52 +44,74 @@ export default function ManageCandidates() {
   };
 
   const deleteCandidate = async (id, name) => {
-    if (!window.confirm(`Remove ${name} from election?`)) return;
+    if (!window.confirm(`Remove "${name}" from election? This calls the smart contract.`)) return;
     try {
       await api.delete(`/admin/candidates/${id}`);
-      toast.success("Candidate removed");
+      toast.success(`${name} removed`);
       load();
     } catch (err) { toast.error(err.response?.data?.message || "Failed"); }
   };
 
   const isRegistration = phase === "Registration";
 
+  // Merge DB candidates with on-chain vote counts
+  const merged = candidates.map(c => ({
+    ...c,
+    voteCount: onChainCandidates.find(oc => oc.id === c.onChainId)?.voteCount ?? 0,
+  }));
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-primary mb-6">Candidate Management</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-primary">Candidate Management</h1>
+        <button onClick={load} className="text-sm text-primary hover:underline">↻ Refresh</button>
+      </div>
 
-      {!isRegistration && (
+      {/* Phase warning */}
+      {phase && !isRegistration && (
         <div className="bg-yellow-50 border border-yellow-300 rounded p-3 mb-6 text-sm text-yellow-800">
-          ⚠️ Candidates can only be added or removed during the <strong>Registration</strong> phase.
+          ⚠️ Candidates can only be added/removed during <strong>Registration</strong> phase.
           Current phase: <strong>{phase}</strong>
         </div>
       )}
 
-      {/* Add form */}
+      {/* Add form — only in Registration */}
       {isRegistration && (
         <div className="card mb-6">
           <h2 className="text-lg font-semibold text-primary mb-4">Add New Candidate</h2>
-          <form onSubmit={addCandidate} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="label">Candidate Name *</label>
-              <input className="input" placeholder="Full name" required
-                value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+          <form onSubmit={addCandidate} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="label">Candidate Full Name *</label>
+                <input className="input" placeholder="e.g. Rahul Gandhi" required
+                  value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+              </div>
+              <div>
+                <label className="label">Political Party *</label>
+                <input className="input" placeholder="e.g. Indian National Congress" required
+                  value={form.partyName} onChange={e => setForm({...form, partyName: e.target.value})} />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="label">Party Symbol / Logo URL (optional)</label>
+                <input className="input" placeholder="https://example.com/logo.png"
+                  value={form.partySymbol} onChange={e => setForm({...form, partySymbol: e.target.value})} />
+                <p className="text-xs text-gray-400 mt-1">Paste a direct image URL. Leave blank to use initials.</p>
+              </div>
             </div>
-            <div>
-              <label className="label">Party Name *</label>
-              <input className="input" placeholder="Political party" required
-                value={form.partyName} onChange={e => setForm({...form, partyName: e.target.value})} />
-            </div>
-            <div>
-              <label className="label">Party Symbol URL</label>
-              <input className="input" placeholder="https://..." 
-                value={form.partySymbol} onChange={e => setForm({...form, partySymbol: e.target.value})} />
-            </div>
-            <div className="sm:col-span-3">
-              <button type="submit" disabled={adding} className="btn-primary">
-                {adding ? "Adding to blockchain..." : "Add Candidate"}
-              </button>
-            </div>
+            {/* Preview */}
+            {form.partySymbol && (
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded border">
+                <img src={form.partySymbol} alt="preview" className="w-12 h-12 object-contain rounded border"
+                  onError={e => { e.target.style.display = "none"; }} />
+                <div>
+                  <p className="font-semibold text-sm">{form.name || "Candidate Name"}</p>
+                  <p className="text-xs text-gray-500">{form.partyName || "Party Name"}</p>
+                </div>
+              </div>
+            )}
+            <button type="submit" disabled={adding} className="btn-primary">
+              {adding ? "⏳ Adding to blockchain (15-30s)..." : "➕ Add Candidate to Election"}
+            </button>
           </form>
         </div>
       )}
@@ -91,32 +119,61 @@ export default function ManageCandidates() {
       {/* Candidates list */}
       {loading ? <LoadingSpinner /> : (
         <div className="card p-0">
+          <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+            <h2 className="font-semibold text-primary">
+              Registered Candidates ({merged.length})
+            </h2>
+            {phase === "Voting" || phase === "Completed" ? (
+              <span className="text-xs text-gray-500">Live vote counts shown</span>
+            ) : null}
+          </div>
           <table className="w-full text-sm">
-            <thead className="bg-primary text-white">
+            <thead className="bg-gray-50 text-gray-600">
               <tr>
-                {["#", "Name", "Party", "On-Chain ID", "Actions"].map(h => (
-                  <th key={h} className="px-4 py-3 text-left font-medium">{h}</th>
+                {["Logo", "Name", "Party", "Chain ID", "Votes", "Action"].map(h => (
+                  <th key={h} className="px-4 py-3 text-left font-medium text-xs uppercase">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {candidates.length === 0 && (
-                <tr><td colSpan={5} className="text-center py-8 text-gray-400">No candidates added yet</td></tr>
+              {merged.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="text-center py-10 text-gray-400">
+                    <p className="text-2xl mb-2">🏛️</p>
+                    <p>No candidates added yet.</p>
+                    {isRegistration && <p className="text-xs mt-1">Use the form above to add candidates.</p>}
+                  </td>
+                </tr>
               )}
-              {candidates.map((c, i) => (
+              {merged.map((c) => (
                 <tr key={c._id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-gray-500">{i + 1}</td>
+                  <td className="px-4 py-3">
+                    {c.partySymbol?.startsWith("http") ? (
+                      <img src={c.partySymbol} alt={c.partyName}
+                        className="w-10 h-10 object-contain rounded border bg-white p-1"
+                        onError={e => { e.target.outerHTML = `<div class="w-10 h-10 bg-primary rounded flex items-center justify-center text-white font-bold">${c.name[0]}</div>`; }} />
+                    ) : (
+                      <div className="w-10 h-10 bg-primary rounded flex items-center justify-center text-white font-bold">
+                        {c.name[0]}
+                      </div>
+                    )}
+                  </td>
                   <td className="px-4 py-3 font-medium">{c.name}</td>
                   <td className="px-4 py-3 text-gray-600">{c.partyName}</td>
                   <td className="px-4 py-3">
-                    <span className="badge-info">ID: {c.onChainId}</span>
+                    <span className="badge-info">#{c.onChainId}</span>
+                  </td>
+                  <td className="px-4 py-3 font-semibold text-primary">
+                    {phase === "Registration" ? "—" : c.voteCount}
                   </td>
                   <td className="px-4 py-3">
-                    {isRegistration && (
+                    {isRegistration ? (
                       <button onClick={() => deleteCandidate(c._id, c.name)}
                         className="text-xs bg-danger text-white px-3 py-1 rounded hover:bg-red-800">
                         Remove
                       </button>
+                    ) : (
+                      <span className="text-xs text-gray-400">Locked</span>
                     )}
                   </td>
                 </tr>

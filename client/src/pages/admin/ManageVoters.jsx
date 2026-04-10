@@ -40,10 +40,16 @@ export default function ManageVoters() {
       const res = await api.post(`/admin/voters/${id}/register-onchain`, { walletAddress: wallet });
       toast.success(`Registered on-chain! TX: ${res.data.txHash.slice(0, 12)}...`);
       load();
-    } catch (err) { toast.error(err.response?.data?.message || "Blockchain error"); }
+    } catch (err) {
+      const msg = err.response?.data?.message || "Blockchain error";
+      if (msg.includes("Owner cannot be a voter")) {
+        toast.error("❌ This wallet is the contract owner (admin wallet). The voter must use a DIFFERENT MetaMask wallet address.");
+      } else {
+        toast.error(msg);
+      }
+    }
     finally { setActionId(null); }
   };
-
   const deleteVoter = async (id) => {
     if (!window.confirm("Remove this voter from database?")) return;
     try {
