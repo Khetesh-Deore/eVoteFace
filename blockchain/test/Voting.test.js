@@ -9,6 +9,7 @@ describe("Voting Contract", function () {
     [owner, voter1, voter2, voter3, nonVoter] = await ethers.getSigners();
     const VotingFactory = await ethers.getContractFactory("Voting");
     voting = await VotingFactory.deploy(
+      1,
       "Test Election 2026",
       "A test election for automated testing"
     );
@@ -27,6 +28,9 @@ describe("Voting Contract", function () {
     });
     it("Should set election title correctly", async function () {
       expect(await voting.electionTitle()).to.equal("Test Election 2026");
+    });
+    it("Should set election ID correctly", async function () {
+      expect(await voting.electionId()).to.equal(1);
     });
     it("Should initialize with zero candidates", async function () {
       expect(await voting.totalCandidates()).to.equal(0);
@@ -279,7 +283,7 @@ describe("Voting Contract", function () {
     });
     it("Should NOT allow voting during Registration phase", async function () {
       const VotingFactory = await ethers.getContractFactory("Voting");
-      const freshVoting = await VotingFactory.deploy("Fresh", "Fresh election");
+      const freshVoting = await VotingFactory.deploy(999, "Fresh", "Fresh election");
       await freshVoting.waitForDeployment();
       await freshVoting.connect(owner).addCandidate("Test", "Party", "sym");
       await freshVoting.connect(owner).registerVoter(voter1.address);
@@ -333,7 +337,7 @@ describe("Voting Contract", function () {
     });
     it("Should NOT allow getting winner before election completes", async function () {
       const VotingFactory = await ethers.getContractFactory("Voting");
-      const freshVoting = await VotingFactory.deploy("Fresh", "Fresh");
+      const freshVoting = await VotingFactory.deploy(998, "Fresh", "Fresh");
       await freshVoting.waitForDeployment();
       await freshVoting.connect(owner).addCandidate("Test", "Party", "sym");
       await freshVoting.connect(owner).registerVoter(voter1.address);
@@ -344,10 +348,12 @@ describe("Voting Contract", function () {
     });
     it("Should return correct total votes in election stats", async function () {
       const stats = await voting.getElectionStats();
+      expect(stats.id).to.equal(1);
       expect(stats.numVotes).to.equal(3);
     });
     it("Should return correct candidate count in stats", async function () {
       const stats = await voting.getElectionStats();
+      expect(stats.id).to.equal(1);
       expect(stats.numCandidates).to.equal(2);
     });
   });

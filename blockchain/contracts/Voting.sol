@@ -44,6 +44,7 @@ contract Voting is Ownable {
     // STATE VARIABLES
     // ─────────────────────────────────────────────
 
+    uint256 public electionId;
     Phase public currentPhase;
 
     uint256 public totalCandidates;
@@ -93,7 +94,12 @@ contract Voting is Ownable {
     // CONSTRUCTOR
     // ─────────────────────────────────────────────
 
-    constructor(string memory _title, string memory _description) Ownable(msg.sender) {
+    constructor(
+        uint256 _electionId,
+        string memory _title,
+        string memory _description
+    ) Ownable(msg.sender) {
+        electionId = _electionId;
         currentPhase = Phase.Registration;
         electionTitle = _title;
         electionDescription = _description;
@@ -233,6 +239,7 @@ contract Voting is Ownable {
     function getElectionStats()
         external view
         returns (
+            uint256 id,
             string memory title,
             string memory description,
             string memory phase,
@@ -246,7 +253,7 @@ contract Voting is Ownable {
         else if (currentPhase == Phase.Voting) phaseStr = "Voting";
         else phaseStr = "Completed";
 
-        return (electionTitle, electionDescription, phaseStr, candidateIds.length, totalRegisteredVoters, totalVotesCast);
+        return (electionId, electionTitle, electionDescription, phaseStr, candidateIds.length, totalRegisteredVoters, totalVotesCast);
     }
 
     function getWinner() external view onlyDuringPhase(Phase.Completed) returns (Candidate memory) {
