@@ -12,5 +12,11 @@
     "deployedAt": "2026-04-12T07:42:45.160Z",
     "transactionHash": "0x93bbe425d923949d78f83dc13247a1dd5442723f102072490d6bb6ec7cf564a0",
     "chainId": 11155111
+  },
+  "factory": {
+    "factoryAddress": "0xeb6C5ddB72C49A599C3465eBfCc87Dd66838588e",
+    "network": "sepolia",
+    "deployer": "0x5b979D566867F2f5abaEE5d51292E1bd1740f103",
+    "deployedAt": "2026-04-12T09:49:07.996Z"
   }
 }

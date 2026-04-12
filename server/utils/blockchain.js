@@ -14,6 +14,9 @@ class ElectionBlockchainService {
     if (this.initialized) return;
 
     try {
+      console.log("🔧 Initializing blockchain service...");
+      console.log("   FACTORY_ADDRESS:", process.env.FACTORY_ADDRESS || "NOT SET");
+      
       this.provider = new ethers.JsonRpcProvider(process.env.ALCHEMY_SEPOLIA_URL);
       this.adminWallet = new ethers.Wallet(process.env.ADMIN_WALLET_PRIVATE_KEY, this.provider);
       
@@ -23,6 +26,9 @@ class ElectionBlockchainService {
           ElectionFactoryABI,
           this.adminWallet
         );
+        console.log("   Factory contract initialized at:", process.env.FACTORY_ADDRESS);
+      } else {
+        console.warn("   ⚠️  FACTORY_ADDRESS not set - election creation will fail");
       }
       
       this.initialized = true;

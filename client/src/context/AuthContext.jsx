@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import api from "../utils/api";
+import { useElection } from "./ElectionContext";
 
 const AuthContext = createContext(null);
 
@@ -37,6 +38,16 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("evf_token");
     setToken(null);
     setUser(null);
+    
+    // Clear election cache on logout
+    try {
+      const electionContext = window.__electionContext__;
+      if (electionContext?.clearCache) {
+        electionContext.clearCache();
+      }
+    } catch (error) {
+      console.warn('Failed to clear election cache:', error);
+    }
   };
 
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";

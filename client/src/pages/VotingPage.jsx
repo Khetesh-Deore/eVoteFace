@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
+import { useElection } from "../context/ElectionContext";
 import { useWallet } from "../context/WalletContext";
 import { getWriteContract } from "../utils/contract";
 import api from "../utils/api";
@@ -9,18 +10,21 @@ import LoadingSpinner from "../components/common/LoadingSpinner";
 import OTPInput from "../components/voter/OTPInput";
 import MetaMaskConnect from "../components/voter/MetaMaskConnect";
 import WebcamCapture from "../components/voter/WebcamCapture";
+import { Clock, Users, FileText, AlertCircle, Lock } from "lucide-react";
 
 const STEPS = ["Wallet", "Face", "OTP", "Vote"];
 
 export default function VotingPage() {
   const { user, setUser } = useAuth();
+  const { currentElectionDetails, selectedElectionId, getContractAddress, getElectionPhase } = useElection();
   const { signer, address, isConnected, isCorrectNetwork, connectWallet } = useWallet();
   const navigate = useNavigate();
 
-  const [step, setStep] = useState(0); // 0=wallet 1=face 2=otp 3=vote
+  const [step, setStep] = useState(0);
   const [candidates, setCandidates] = useState([]);
-  const [phase, setPhase] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [electionStats, setElectionStats] = useState(null);
+  const [votingLocked, setVotingLocked] = useState(false);
 
   // Face step
   const [faceLoading, setFaceLoading] = useState(false);
@@ -37,62 +41,171 @@ export default function VotingPage() {
   const [voting, setVoting] = useState(false);
   const [txHash, setTxHash] = useState(null);
 
+  // Time remaining
+  const [timeRemaining, setTimeRemaining] = useState(null);
+
+  // Pre-voting checks
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await api.get("/votes/results");
-        setCandidates(res.data.candidates);
-        setPhase(res.data.phase);
-        if (res.data.phase !== "Voting") {
-          toast.error("Voting is not currently open");
+        // Check if election is selected
+        if (!selectedElectionId) {
+          toast.error("No election selected. Please select an election first.");
           navigate("/dashboard");
           return;
         }
-        const statusRes = await api.get("/voters/status");
-        if (!statusRes.data.isVerified) {
-          toast.error("Your account is not approved yet"); navigate("/dashboard"); return;
+
+        // Check election phase
+        const phase = getElectionPhase();
+        if (phase !== "voting") {
+          toast.error(`Voting is not currently open. Current phase: ${phase}`);
+          navigate("/dashboard");
+          return;
         }
+
+        // Load candidates and stats
+        const [candidatesRes, statusRes, statsRes] = await Promise.all([
+          api.get("/votes/candidates"),
+          api.get("/voters/status"),
+          api.get(`/elections/${selectedElectionId}`).catch(() => null),
+        ]);
+
+        setCandidates(candidatesRes.data.candidates || candidatesRes.data);
+        setElectionStats(statsRes?.data?.stats);
+
+        // Verify user eligibility for THIS election
+        if (!statusRes.data.isVerified) {
+          toast.error("Your account is not approved for this election");
+          navigate("/dashboard");
+          return;
+        }
+
         if (statusRes.data.hasVoted) {
-          toast.info("You have already voted. Redirecting to dashboard...");
+          toast.info("You have already voted in this election. Redirecting...");
           setTimeout(() => navigate("/dashboard"), 1500);
           return;
         }
+
         if (!statusRes.data.isRegisteredOnChain) {
-          toast.error("Your wallet is not registered on-chain. Contact admin.");
+          toast.error("Your wallet is not registered on-chain for this election. Contact admin.");
           navigate("/dashboard");
           return;
         }
-      } catch { navigate("/dashboard"); }
-      finally { setLoading(false); }
+
+        if (!statusRes.data.faceRegistered) {
+          toast.error("Your face is not registered for this election. Contact admin.");
+          navigate("/dashboard");
+          return;
+        }
+
+        // Calculate time remaining
+        if (currentElectionDetails?.endTime) {
+          updateTimeRemaining();
+          const interval = setInterval(updateTimeRemaining, 60000); // Update every minute
+          return () => clearInterval(interval);
+        }
+
+      } catch (error) {
+        console.error("Failed to load voting page:", error);
+        toast.error("Failed to load election data");
+        navigate("/dashboard");
+      } finally {
+        setLoading(false);
+      }
     };
+
     load();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedElectionId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const updateTimeRemaining = () => {
+    if (!currentElectionDetails?.endTime) return;
+    
+    const now = new Date();
+    const end = new Date(currentElectionDetails.endTime);
+    const diff = end - now;
+
+    if (diff <= 0) {
+      setTimeRemaining("Voting has ended");
+      toast.warning("Voting period has ended");
+      setTimeout(() => navigate("/dashboard"), 2000);
+      return;
+    }
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (days > 0) {
+      setTimeRemaining(`${days}d ${hours}h ${minutes}m remaining`);
+    } else if (hours > 0) {
+      setTimeRemaining(`${hours}h ${minutes}m remaining`);
+    } else {
+      setTimeRemaining(`${minutes}m remaining`);
+    }
+  };
+
+  // Lock voting session when started
+  useEffect(() => {
+    if (step > 0) {
+      setVotingLocked(true);
+    }
+  }, [step]);
+
+  // Warn if election changes during voting
+  useEffect(() => {
+    if (votingLocked && step > 0 && step < 4) {
+      const handleBeforeUnload = (e) => {
+        e.preventDefault();
+        e.returnValue = "You are in the middle of voting. Are you sure you want to leave?";
+      };
+      window.addEventListener("beforeunload", handleBeforeUnload);
+      return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+    }
+  }, [votingLocked, step]);
 
   // Step 0: Wallet verification
   const verifyWallet = async () => {
     if (!isConnected || !isCorrectNetwork) {
-      await connectWallet(); return;
+      await connectWallet();
+      return;
     }
+
     try {
       const statusRes = await api.get("/voters/status");
+      
       if (!statusRes.data.isRegisteredOnChain) {
-        toast.error("Your wallet is not registered on-chain. Contact admin."); return;
+        toast.error("Your wallet is not registered on-chain for this election. Contact admin.");
+        return;
       }
+
       if (statusRes.data.hasVoted) {
-        toast.error("You have already voted."); navigate("/dashboard"); return;
+        toast.error("You have already voted in this election.");
+        navigate("/dashboard");
+        return;
       }
+
+      // Verify wallet matches registered wallet
+      if (user?.walletAddress && user.walletAddress.toLowerCase() !== address.toLowerCase()) {
+        toast.error("Connected wallet does not match your registered wallet");
+        return;
+      }
+
       toast.success("Wallet verified ✓");
       setStep(1);
-    } catch { toast.error("Failed to verify wallet status"); }
+    } catch (error) {
+      toast.error("Failed to verify wallet status");
+    }
   };
 
   // Step 1: Face verification
   const scanFace = async (screenshot) => {
     if (!screenshot) return;
     setFaceLoading(true);
+    
     try {
       const res = await api.post("/face/verify", { liveImageBase64: screenshot });
       setFaceResult(res.data);
+      
       if (res.data.match) {
         setFaceVerifiedToken(res.data.faceVerifiedToken);
         toast.success(`Face verified ✓ (${Math.round(res.data.confidence * 100)}% confidence)`);
@@ -102,7 +215,9 @@ export default function VotingPage() {
       }
     } catch (err) {
       toast.error(err.response?.data?.message || "Face verification failed");
-    } finally { setFaceLoading(false); }
+    } finally {
+      setFaceLoading(false);
+    }
   };
 
   // Step 2: Send OTP
@@ -112,8 +227,11 @@ export default function VotingPage() {
       await api.post("/otp/send", { faceVerifiedToken });
       setOtpSent(true);
       toast.success("OTP sent to your registered email");
-    } catch (err) { toast.error(err.response?.data?.message || "Failed to send OTP"); }
-    finally { setOtpSending(false); }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to send OTP");
+    } finally {
+      setOtpSending(false);
+    }
   };
 
   const verifyOTP = async (code) => {
@@ -123,44 +241,73 @@ export default function VotingPage() {
       setVoteAuthToken(res.data.voteAuthToken);
       toast.success("OTP verified ✓");
       setStep(3);
-    } catch (err) { toast.error(err.response?.data?.message || "Invalid OTP"); }
-    finally { setOtpVerifying(false); }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Invalid OTP");
+    } finally {
+      setOtpVerifying(false);
+    }
   };
 
   // Step 3: Cast vote
   const castVote = async (candidateId) => {
-    if (!signer) { toast.error("MetaMask not connected"); return; }
-    if (!window.confirm(`Confirm vote for candidate #${candidateId}? This cannot be undone.`)) return;
+    if (!signer) {
+      toast.error("MetaMask not connected");
+      return;
+    }
+
+    const candidate = candidates.find(c => c.id === candidateId);
+    if (!window.confirm(`Confirm vote for ${candidate?.name}? This cannot be undone.`)) {
+      return;
+    }
+
     setVoting(true);
     try {
-      const contract = getWriteContract(signer);
+      // Get contract address for this election
+      const contractAddress = getContractAddress();
+      if (!contractAddress) {
+        throw new Error("Election contract address not found");
+      }
+
+      // Create contract instance with election-specific address
+      const contract = getWriteContract(signer, contractAddress);
+      
+      toast.info("Submitting transaction to blockchain...");
       const tx = await contract.castVote(candidateId);
+      
       toast.info("Transaction submitted. Waiting for confirmation...");
       const receipt = await tx.wait();
       const hash = receipt.hash;
       setTxHash(hash);
 
-      // Record in backend
-      await api.post("/votes/record", { candidateId, txHash: hash, voteAuthToken });
+      // Record vote in backend with election context
+      await api.post("/votes/record", {
+        candidateId,
+        txHash: hash,
+        voteAuthToken,
+        electionId: selectedElectionId,
+      });
+
       setUser(prev => ({ ...prev, hasVoted: true }));
-      toast.success("🎉 Vote cast successfully! Redirecting to dashboard...");
+      toast.success(`🎉 Vote cast successfully for ${currentElectionDetails?.title}!`);
       
-      // Redirect to dashboard after 3 seconds
       setTimeout(() => navigate("/dashboard"), 3000);
-      setStep(4); // success
+      setStep(4);
     } catch (err) {
       console.error("Vote error:", err);
+      
       if (err.code === 4001 || err.code === "ACTION_REJECTED") {
         toast.error("Transaction rejected by user");
       } else if (err.message?.includes("already cast their vote")) {
-        toast.error("You have already voted. Redirecting...");
+        toast.error("You have already voted in this election. Redirecting...");
         setTimeout(() => navigate("/dashboard"), 2000);
       } else if (err.reason) {
         toast.error(`Blockchain error: ${err.reason}`);
       } else {
         toast.error(err.response?.data?.message || err.message || "Voting failed");
       }
-    } finally { setVoting(false); }
+    } finally {
+      setVoting(false);
+    }
   };
 
   if (loading) return <LoadingSpinner />;
@@ -171,34 +318,112 @@ export default function VotingPage() {
       <div className="max-w-lg mx-auto px-4 py-16 text-center">
         <div className="text-6xl mb-4">🎉</div>
         <h1 className="text-2xl font-bold text-success mb-2">Vote Cast Successfully!</h1>
-        <p className="text-gray-600 mb-4">Your vote has been permanently recorded on the Ethereum blockchain.</p>
+        <p className="text-gray-600 mb-2">Your vote has been permanently recorded on the Ethereum blockchain.</p>
+        <p className="text-sm text-gray-500 mb-4">Election: {currentElectionDetails?.title}</p>
+        
         {txHash && (
-          <a href={`https://sepolia.etherscan.io/tx/${txHash}`} target="_blank" rel="noreferrer"
-            className="text-sm text-primary hover:underline block mb-6">
+          <a
+            href={`https://sepolia.etherscan.io/tx/${txHash}`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm text-primary hover:underline block mb-6"
+          >
             View on Etherscan: {txHash.slice(0, 20)}...
           </a>
         )}
+        
         <p className="text-sm text-gray-500 mb-4">Redirecting to dashboard in 3 seconds...</p>
-        <button onClick={() => navigate("/dashboard")} className="btn-primary">Go to Dashboard Now →</button>
+        <button onClick={() => navigate("/dashboard")} className="btn-primary">
+          Go to Dashboard Now →
+        </button>
       </div>
     );
   }
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-primary mb-2">Cast Your Vote</h1>
-      <p className="text-gray-500 text-sm mb-6">Complete all three verification steps to cast your vote securely.</p>
+      {/* Election Header */}
+      <div className="bg-white border rounded-lg p-4 mb-6">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold text-primary mb-1">
+              {currentElectionDetails?.title || "Cast Your Vote"}
+            </h1>
+            {currentElectionDetails?.description && (
+              <p className="text-sm text-gray-600">{currentElectionDetails.description}</p>
+            )}
+          </div>
+          {votingLocked && (
+            <div className="flex items-center gap-1 text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
+              <Lock className="w-3 h-3" />
+              Locked
+            </div>
+          )}
+        </div>
+
+        {/* Election Stats */}
+        <div className="grid grid-cols-3 gap-4 pt-3 border-t">
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-gray-400" />
+            <div>
+              <div className="text-xs text-gray-500">Candidates</div>
+              <div className="font-semibold">{candidates.length}</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <FileText className="w-4 h-4 text-gray-400" />
+            <div>
+              <div className="text-xs text-gray-500">Votes Cast</div>
+              <div className="font-semibold">{electionStats?.onChain?.numVotes || 0}</div>
+            </div>
+          </div>
+          {timeRemaining && (
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-gray-400" />
+              <div>
+                <div className="text-xs text-gray-500">Time Left</div>
+                <div className="font-semibold text-xs">{timeRemaining}</div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Warning if voting locked */}
+      {votingLocked && step > 0 && step < 4 && (
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-6 flex items-start gap-2">
+          <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-orange-800">
+            <p className="font-medium">Voting session in progress</p>
+            <p className="text-xs mt-1">
+              Do not refresh or close this page. Switching elections will discard your progress.
+            </p>
+          </div>
+        </div>
+      )}
+
+      <p className="text-gray-500 text-sm mb-6">
+        Complete all three verification steps to cast your vote securely.
+      </p>
 
       {/* Step indicator */}
       <div className="flex items-center mb-8">
         {STEPS.map((s, i) => (
           <div key={s} className="flex items-center">
-            <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold
-              ${i < step ? "bg-success text-white" : i === step ? "bg-primary text-white" : "bg-gray-200 text-gray-500"}`}>
+            <div
+              className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold
+              ${i < step ? "bg-success text-white" : i === step ? "bg-primary text-white" : "bg-gray-200 text-gray-500"}`}
+            >
               {i < step ? "✓" : i + 1}
             </div>
-            <span className={`ml-1 text-xs hidden sm:block ${i === step ? "text-primary font-medium" : "text-gray-400"}`}>{s}</span>
-            {i < STEPS.length - 1 && <div className={`h-0.5 w-8 mx-2 ${i < step ? "bg-success" : "bg-gray-200"}`} />}
+            <span
+              className={`ml-1 text-xs hidden sm:block ${i === step ? "text-primary font-medium" : "text-gray-400"}`}
+            >
+              {s}
+            </span>
+            {i < STEPS.length - 1 && (
+              <div className={`h-0.5 w-8 mx-2 ${i < step ? "bg-success" : "bg-gray-200"}`} />
+            )}
           </div>
         ))}
       </div>
@@ -207,10 +432,14 @@ export default function VotingPage() {
       {step === 0 && (
         <div className="card">
           <h2 className="font-semibold text-lg mb-3">Step 1 — Wallet Verification</h2>
-          <p className="text-sm text-gray-600 mb-4">Connect your MetaMask wallet. It must be registered by the admin.</p>
+          <p className="text-sm text-gray-600 mb-4">
+            Connect your MetaMask wallet. It must be registered for this election.
+          </p>
           <MetaMaskConnect className="mb-4" />
           {isConnected && isCorrectNetwork && (
-            <button onClick={verifyWallet} className="btn-primary w-full mt-3">Verify Wallet →</button>
+            <button onClick={verifyWallet} className="btn-primary w-full mt-3">
+              Verify Wallet →
+            </button>
           )}
         </div>
       )}
@@ -236,7 +465,8 @@ export default function VotingPage() {
           {!otpSent ? (
             <div className="space-y-4">
               <p className="text-sm text-gray-600">
-                An OTP will be sent to your registered email: <strong>{user?.email?.replace(/(.{1}).*@/, "$1***@")}</strong>
+                An OTP will be sent to your registered email:{" "}
+                <strong>{user?.email?.replace(/(.{1}).*@/, "$1***@")}</strong>
               </p>
               <button onClick={sendOTP} disabled={otpSending} className="btn-primary w-full">
                 {otpSending ? "Sending OTP..." : "Send OTP to Email"}
@@ -246,8 +476,11 @@ export default function VotingPage() {
             <div className="space-y-4">
               <p className="text-sm text-gray-600">Enter the 6-digit OTP sent to your email.</p>
               <OTPInput onComplete={verifyOTP} loading={otpVerifying} />
-              <button onClick={sendOTP} disabled={otpSending}
-                className="text-sm text-primary hover:underline w-full text-center">
+              <button
+                onClick={sendOTP}
+                disabled={otpSending}
+                className="text-sm text-primary hover:underline w-full text-center"
+              >
                 {otpSending ? "Resending..." : "Resend OTP"}
               </button>
             </div>
@@ -259,10 +492,15 @@ export default function VotingPage() {
       {step === 3 && (
         <div className="card">
           <h2 className="font-semibold text-lg mb-1">Step 4 — Cast Your Vote</h2>
-          <p className="text-sm text-gray-500 mb-5">Select a candidate. MetaMask will ask you to confirm the transaction.</p>
+          <p className="text-sm text-gray-500 mb-5">
+            Select a candidate. MetaMask will ask you to confirm the transaction.
+          </p>
           <div className="space-y-3">
             {candidates.map((c) => (
-              <div key={c.id} className="border border-gray-200 rounded-lg p-4 flex items-center justify-between hover:border-primary hover:bg-blue-50 transition-colors">
+              <div
+                key={c.id}
+                className="border border-gray-200 rounded-lg p-4 flex items-center justify-between hover:border-primary hover:bg-blue-50 transition-colors"
+              >
                 <div className="flex items-center gap-3">
                   {c.partySymbol && c.partySymbol.startsWith("http") ? (
                     <img src={c.partySymbol} alt={c.partyName} className="w-10 h-10 object-contain rounded" />
@@ -276,15 +514,15 @@ export default function VotingPage() {
                     <p className="text-xs text-gray-500">{c.partyName}</p>
                   </div>
                 </div>
-                <button onClick={() => castVote(c.id)} disabled={voting}
-                  className="btn-accent text-sm px-4 py-2">
+                <button onClick={() => castVote(c.id)} disabled={voting} className="btn-accent text-sm px-4 py-2">
                   {voting ? "..." : "Vote"}
                 </button>
               </div>
             ))}
           </div>
           <p className="text-xs text-gray-400 mt-4 text-center">
-            Your vote is anonymous and permanently recorded on the Ethereum blockchain.
+            Your vote is anonymous and permanently recorded on the Ethereum blockchain for{" "}
+            {currentElectionDetails?.title}.
           </p>
         </div>
       )}

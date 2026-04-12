@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useElection } from "../../context/ElectionContext";
+import ElectionSelector from "./ElectionSelector";
 
 export default function Navbar() {
   const { user, logout, isAdmin } = useAuth();
+  const { selectedElectionId, currentElectionDetails, isLoadingElections } = useElection();
   const navigate = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
@@ -19,11 +22,14 @@ export default function Navbar() {
     </Link>
   );
 
+  // Show election selector for logged-in users
+  const showElectionSelector = user && (isAdmin || location.pathname !== '/');
+
   return (
     <nav className="bg-primary text-white shadow-md sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-1.5" onClick={close}>
+        <Link to="/" className="flex items-center gap-1.5 flex-shrink-0" onClick={close}>
           <span className="text-accent font-bold text-xl">e</span>
           <span className="font-bold text-lg tracking-wide">VoteFace</span>
           <span className="hidden md:block text-xs text-blue-300 ml-1 border-l border-blue-400 pl-2">
@@ -31,8 +37,19 @@ export default function Navbar() {
           </span>
         </Link>
 
+        {/* Election Selector - Desktop */}
+        {showElectionSelector && (
+          <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
+            {isLoadingElections ? (
+              <div className="text-xs text-blue-300">Loading elections...</div>
+            ) : (
+              <ElectionSelector showDetails={false} />
+            )}
+          </div>
+        )}
+
         {/* Desktop nav */}
-        <div className="hidden sm:flex items-center gap-5 text-sm">
+        <div className="hidden sm:flex items-center gap-5 text-sm ml-auto">
           {navLink("/results", "Results")}
           {!user ? (
             <>
@@ -45,10 +62,9 @@ export default function Navbar() {
           ) : isAdmin ? (
             <>
               {navLink("/admin/dashboard", "Dashboard")}
+              {navLink("/admin/elections", "Elections")}
               {navLink("/admin/voters", "Voters")}
               {navLink("/admin/candidates", "Candidates")}
-              {navLink("/admin/face", "Faces")}
-              {navLink("/admin/election", "Election")}
               {navLink("/admin/results", "Results")}
               <button onClick={handleLogout} className="hover:text-accent transition-colors">Logout</button>
             </>
@@ -75,6 +91,20 @@ export default function Navbar() {
       {/* Mobile menu */}
       {open && (
         <div className="sm:hidden bg-blue-900 border-t border-blue-700 px-4 py-3 space-y-3 text-sm">
+          {/* Election Selector - Mobile */}
+          {showElectionSelector && (
+            <div className="pb-3 border-b border-blue-700">
+              <label className="text-xs text-blue-300 mb-2 block">Current Election</label>
+              {isLoadingElections ? (
+                <div className="text-xs text-blue-300">Loading...</div>
+              ) : selectedElectionId ? (
+                <div className="text-sm font-medium">{currentElectionDetails?.title || 'Election'}</div>
+              ) : (
+                <div className="text-xs text-blue-300">No election selected</div>
+              )}
+            </div>
+          )}
+          
           {navLink("/results", "📊 Results")}
           {!user ? (
             <>
@@ -84,6 +114,7 @@ export default function Navbar() {
           ) : isAdmin ? (
             <>
               {navLink("/admin/dashboard", "🏠 Dashboard")}
+              {navLink("/admin/elections", "🗳️ Elections")}
               {navLink("/admin/voters", "👥 Voters")}
               {navLink("/admin/candidates", "🏛️ Candidates")}
               {navLink("/admin/face", "📷 Face Registration")}

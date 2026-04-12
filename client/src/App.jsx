@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
-import { ElectionProvider } from "./context/ElectionContext";
+import { ElectionProvider, useElection } from "./context/ElectionContext";
+import { useEffect } from "react";
 
 // Common
 import Navbar from "./components/common/Navbar";
@@ -29,48 +30,64 @@ import ElectionControl from "./pages/admin/ElectionControl";
 import AdminResults from "./pages/admin/AdminResults";
 import Elections from "./pages/admin/Elections";
 
-export default function App() {
+function AppContent() {
   const { loading } = useAuth();
+  const electionContext = useElection();
+
+  // Expose election context globally for logout
+  useEffect(() => {
+    window.__electionContext__ = electionContext;
+    return () => {
+      delete window.__electionContext__;
+    };
+  }, [electionContext]);
+
   if (loading) return <LoadingSpinner fullScreen />;
 
   return (
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <main className="flex-1">
+        <Routes>
+          {/* Public */}
+          <Route path="/"         element={<Home />} />
+          <Route path="/login"    element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/results"  element={<Results />} />
+
+          {/* Admin auth */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+
+          {/* Protected voter routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/vote"      element={<VotingPage />} />
+          </Route>
+
+          {/* Protected admin routes */}
+          <Route element={<AdminRoute />}>
+            <Route path="/admin/dashboard"   element={<AdminDashboard />} />
+            <Route path="/admin/elections"   element={<Elections />} />
+            <Route path="/admin/voters"      element={<ManageVoters />} />
+            <Route path="/admin/candidates"  element={<ManageCandidates />} />
+            <Route path="/admin/face"        element={<FaceRegistration />} />
+            <Route path="/admin/election"    element={<ElectionControl />} />
+            <Route path="/admin/results"     element={<AdminResults />} />
+          </Route>
+
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
+export default function App() {
+  return (
     <ElectionProvider>
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <main className="flex-1">
-          <Routes>
-            {/* Public */}
-            <Route path="/"         element={<Home />} />
-            <Route path="/login"    element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/results"  element={<Results />} />
-
-            {/* Admin auth */}
-            <Route path="/admin/login" element={<AdminLogin />} />
-
-            {/* Protected voter routes */}
-            <Route element={<ProtectedRoute />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/vote"      element={<VotingPage />} />
-            </Route>
-
-            {/* Protected admin routes */}
-            <Route element={<AdminRoute />}>
-              <Route path="/admin/dashboard"   element={<AdminDashboard />} />
-              <Route path="/admin/elections"   element={<Elections />} />
-              <Route path="/admin/voters"      element={<ManageVoters />} />
-              <Route path="/admin/candidates"  element={<ManageCandidates />} />
-              <Route path="/admin/face"        element={<FaceRegistration />} />
-              <Route path="/admin/election"    element={<ElectionControl />} />
-              <Route path="/admin/results"     element={<AdminResults />} />
-            </Route>
-
-            {/* Fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
+      <AppContent />
     </ElectionProvider>
   );
 }

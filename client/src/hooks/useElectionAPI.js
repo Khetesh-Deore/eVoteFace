@@ -6,7 +6,7 @@ import api from '../utils/api';
  * Automatically uses selected election ID
  */
 export function useElectionAPI() {
-  const { selectedElectionId } = useElection();
+  const { selectedElectionId, getContractAddress } = useElection();
 
   const getElectionPath = (path) => {
     if (!selectedElectionId) {
@@ -48,5 +48,6 @@ export function useElectionAPI() {
     // Utility
     selectedElectionId,
     getElectionPath,
+    getContractAddress,
   };
 }

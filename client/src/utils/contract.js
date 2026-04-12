@@ -5,22 +5,34 @@ const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS;
 const ALCHEMY_KEY = import.meta.env.VITE_ALCHEMY_KEY;
 
 if (!CONTRACT_ADDRESS) {
-  console.error("VITE_CONTRACT_ADDRESS is not set in .env");
+  console.warn("VITE_CONTRACT_ADDRESS is not set in .env - using election-specific addresses");
 }
 
-// Read-only contract — for results, phase, candidate list
-export const getReadContract = () => {
-  if (!CONTRACT_ADDRESS) throw new Error("Contract address not configured");
+/**
+ * Get read-only contract instance
+ * @param {string} contractAddress - Optional contract address (uses env var if not provided)
+ * @returns {ethers.Contract}
+ */
+export const getReadContract = (contractAddress = CONTRACT_ADDRESS) => {
+  if (!contractAddress) throw new Error("Contract address not configured");
+  
   const rpcUrl = ALCHEMY_KEY
     ? `https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_KEY}`
-    : "https://rpc.sepolia.org"; // public fallback
+    : "https://rpc.sepolia.org";
+  
   const provider = new ethers.JsonRpcProvider(rpcUrl);
-  return new ethers.Contract(CONTRACT_ADDRESS, VotingABI, provider);
+  return new ethers.Contract(contractAddress, VotingABI, provider);
 };
 
-// Write contract — requires MetaMask signer (for castVote)
-export const getWriteContract = (signer) => {
+/**
+ * Get write contract instance (requires MetaMask signer)
+ * @param {ethers.Signer} signer - MetaMask signer
+ * @param {string} contractAddress - Optional contract address (uses env var if not provided)
+ * @returns {ethers.Contract}
+ */
+export const getWriteContract = (signer, contractAddress = CONTRACT_ADDRESS) => {
   if (!signer) throw new Error("MetaMask signer required to cast vote");
-  if (!CONTRACT_ADDRESS) throw new Error("Contract address not configured");
-  return new ethers.Contract(CONTRACT_ADDRESS, VotingABI, signer);
+  if (!contractAddress) throw new Error("Contract address not configured");
+  
+  return new ethers.Contract(contractAddress, VotingABI, signer);
 };
