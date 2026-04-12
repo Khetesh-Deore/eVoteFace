@@ -130,7 +130,7 @@ contract ElectionFactory {
         view 
         returns (ElectionRecord[] memory) 
     {
-        // Count elections by admin
+        // First pass: count matching elections
         uint256 count = 0;
         for (uint256 i = 1; i <= electionCounter; i++) {
             if (elections[i].admin == _admin) {
@@ -138,14 +138,16 @@ contract ElectionFactory {
             }
         }
 
-        // Create result array
+        // Allocate exact size array
         ElectionRecord[] memory adminElections = new ElectionRecord[](count);
-        uint256 index = 0;
         
+        // Second pass: populate array
+        uint256 index = 0;
         for (uint256 i = 1; i <= electionCounter; i++) {
             if (elections[i].admin == _admin) {
                 adminElections[index] = elections[i];
                 index++;
+                if (index == count) break; // Early exit optimization
             }
         }
         

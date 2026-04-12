@@ -11,6 +11,12 @@ const electionSchema = new mongoose.Schema(
     },
     contractAddress: { type: String, required: false, default: null },
     factoryTxHash:   { type: String },
+    deploymentStatus: {
+      type: String,
+      enum: ["not_deployed", "deploying", "deployed", "failed"],
+      default: "not_deployed",
+    },
+    deploymentError: { type: String }, // Store error message if deployment fails
     admin:       { type: mongoose.Schema.Types.ObjectId, ref: "Admin" },
     isActive:    { type: Boolean, default: true },
     startTime:   { type: Date },
@@ -24,7 +30,14 @@ const electionSchema = new mongoose.Schema(
 // ── Indexes ──
 electionSchema.index({ admin: 1 });
 electionSchema.index({ isActive: 1 });
-// Sparse index allows multiple null values but ensures deployed contracts are unique
-electionSchema.index({ contractAddress: 1 }, { unique: true, sparse: true });
+// Partial index only indexes non-null contractAddress values
+// This ensures deployed contracts are unique while allowing unlimited null values
+electionSchema.index(
+  { contractAddress: 1 }, 
+  { 
+    unique: true, 
+    partialFilterExpression: { contractAddress: { $type: "string" } }
+  }
+);
 
 module.exports = mongoose.model("Election", electionSchema);

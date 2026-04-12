@@ -3,7 +3,7 @@ const router = express.Router({ mergeParams: true });
 const Candidate = require("../models/Candidate");
 const User = require("../models/User");
 const adminAuth = require("../middleware/adminAuth");
-const { electionContext, requirePhase } = require("../middleware/electionContext");
+const { electionContext, requirePhase, requireElectionOwnership } = require("../middleware/electionContext");
 const blockchainService = require("../utils/blockchain");
 const multer = require("multer");
 const axios = require("axios");
@@ -11,12 +11,15 @@ const axios = require("axios");
 // Apply election context to all routes
 router.use(electionContext);
 
+// Apply ownership check to all admin routes
+router.use(adminAuth, requireElectionOwnership);
+
 /**
  * @route   GET /api/elections/:electionId/admin
  * @desc    Get election admin dashboard data
- * @access  Admin only
+ * @access  Admin only (must own election)
  */
-router.get("/", adminAuth, async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const election = req.election;
 
@@ -83,7 +86,6 @@ router.get("/", adminAuth, async (req, res) => {
  */
 router.post(
   "/candidates",
-  adminAuth,
   requirePhase("registration"),
   async (req, res) => {
     try {
@@ -144,7 +146,7 @@ router.post(
  * @desc    Get all candidates for election
  * @access  Admin only
  */
-router.get("/candidates", adminAuth, async (req, res) => {
+router.get("/candidates", async (req, res) => {
   try {
     const candidates = await Candidate.find({
       electionId: req.election._id,
@@ -170,7 +172,6 @@ router.get("/candidates", adminAuth, async (req, res) => {
  */
 router.delete(
   "/candidates/:candidateId",
-  adminAuth,
   requirePhase("registration"),
   async (req, res) => {
     try {
@@ -211,7 +212,7 @@ router.delete(
  * @desc    Get all voters for election
  * @access  Admin only
  */
-router.get("/voters", adminAuth, async (req, res) => {
+router.get("/voters", async (req, res) => {
   try {
     const { page = 1, limit = 20, isVerified, hasVoted } = req.query;
 
@@ -249,7 +250,7 @@ router.get("/voters", adminAuth, async (req, res) => {
  * @desc    Approve voter
  * @access  Admin only
  */
-router.post("/voters/:voterId/approve", adminAuth, async (req, res) => {
+router.post("/voters/:voterId/approve", async (req, res) => {
   try {
     const voter = await User.findOne({
       _id: req.params.voterId,
@@ -288,7 +289,6 @@ router.post("/voters/:voterId/approve", adminAuth, async (req, res) => {
  */
 router.post(
   "/voters/:voterId/register-onchain",
-  adminAuth,
   requirePhase("registration"),
   async (req, res) => {
     try {
@@ -348,7 +348,6 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 router.post(
   "/voters/:voterId/face",
-  adminAuth,
   upload.single("image"),
   async (req, res) => {
     try {
@@ -409,7 +408,7 @@ router.post(
  * @desc    Change election phase
  * @access  Admin only
  */
-router.post("/phase", adminAuth, async (req, res) => {
+router.post("/phase", async (req, res) => {
   try {
     const { phase } = req.body;
 

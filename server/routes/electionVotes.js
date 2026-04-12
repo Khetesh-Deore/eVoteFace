@@ -25,6 +25,15 @@ router.post("/record", auth, async (req, res) => {
     }
 
     const election = req.election;
+    
+    // Check if contract is deployed
+    if (!election.contractAddress) {
+      return res.status(400).json({
+        message: "Election contract not deployed yet",
+        error: "Cannot record votes for undeployed election"
+      });
+    }
+    
     const voter = await User.findOne({
       _id: req.user._id,
       electionId: election._id,
@@ -32,8 +41,12 @@ router.post("/record", auth, async (req, res) => {
 
     if (!voter) {
       return res
-        .status(404)
-        .json({ message: "Voter not found in this election" });
+        .status(403)
+        .json({ 
+          message: "You are not registered for this election",
+          electionId: election._id,
+          electionTitle: election.title
+        });
     }
 
     if (voter.hasVoted) {
@@ -100,73 +113,93 @@ router.get("/results", async (req, res) => {
   try {
     const election = req.election;
 
-    // Check if contract is deployed
+    // Handle undeployed contract gracefully
     if (!election.contractAddress) {
-      return res.status(400).json({
-        message: "Election contract not deployed yet",
+      return res.status(200).json({
+        message: "Election contract is being deployed or not yet deployed",
+        status: "pending_deployment",
         election: {
           _id: election._id,
           title: election.title,
           phase: election.phase,
+          contractAddress: null,
         },
         results: [],
+        winner: null,
         totalVotes: 0,
       });
     }
 
-    // Get results from blockchain
-    const contract = blockchainService.getElectionContractReadOnly(
-      election.contractAddress
-    );
-    const candidates = await contract.getAllCandidates();
-
-    const results = candidates.map((c) => ({
-      id: Number(c.id),
-      name: c.name,
-      partyName: c.partyName,
-      partySymbol: c.partySymbol,
-      voteCount: Number(c.voteCount),
-    }));
-
-    // Get winner if election is completed
-    let winner = null;
-    if (election.phase === "completed") {
-      try {
-        const winnerData = await contract.getWinner();
-        winner = {
-          id: Number(winnerData.id),
-          name: winnerData.name,
-          partyName: winnerData.partyName,
-          voteCount: Number(winnerData.voteCount),
-        };
-      } catch (error) {
-        // Silently fail - this is expected for elections with invalid/undeployed contracts
-        // Uncomment below for debugging:
-        // console.warn(`Failed to get winner for election ${election._id}:`, error.message);
-      }
-    }
-
-    // Get total votes
-    let totalVotes = 0;
+    // Get results from blockchain with error handling
     try {
-      const stats = await contract.getElectionStats();
-      totalVotes = Number(stats.numVotes);
-    } catch (error) {
-      // Silently fail - this is expected for elections with invalid/undeployed contracts
-      // Uncomment below for debugging:
-      // console.warn(`Failed to fetch vote stats for election ${election._id}:`, error.message);
-    }
+      const contract = blockchainService.getElectionContractReadOnly(
+        election.contractAddress
+      );
+      const candidates = await contract.getAllCandidates();
 
-    return res.json({
-      election: {
-        _id: election._id,
-        title: election.title,
-        phase: election.phase,
-      },
-      results,
-      winner,
-      totalVotes,
-    });
+      const results = candidates.map((c) => ({
+        id: Number(c.id),
+        name: c.name,
+        partyName: c.partyName,
+        partySymbol: c.partySymbol,
+        voteCount: Number(c.voteCount),
+      }));
+
+      // Get winner if election is completed
+      let winner = null;
+      if (election.phase === "completed") {
+        try {
+          const winnerData = await contract.getWinner();
+          winner = {
+            id: Number(winnerData.id),
+            name: winnerData.name,
+            partyName: winnerData.partyName,
+            voteCount: Number(winnerData.voteCount),
+          };
+        } catch (error) {
+          // Silently fail
+        }
+      }
+
+      // Get total votes
+      let totalVotes = 0;
+      try {
+        const stats = await contract.getElectionStats();
+        totalVotes = Number(stats.numVotes);
+      } catch (error) {
+        // Silently fail
+      }
+
+      return res.json({
+        status: "deployed",
+        election: {
+          _id: election._id,
+          title: election.title,
+          phase: election.phase,
+          contractAddress: election.contractAddress,
+        },
+        results,
+        winner,
+        totalVotes,
+      });
+      
+    } catch (contractError) {
+      // Contract exists but is invalid/corrupted
+      return res.status(200).json({
+        message: "Election contract is invalid or corrupted",
+        status: "contract_error",
+        election: {
+          _id: election._id,
+          title: election.title,
+          phase: election.phase,
+          contractAddress: election.contractAddress,
+        },
+        results: [],
+        winner: null,
+        totalVotes: 0,
+        error: contractError.message,
+      });
+    }
   } catch (error) {
     console.error("Failed to fetch results:", error);
     return res.status(500).json({
@@ -185,33 +218,65 @@ router.get("/candidates", async (req, res) => {
   try {
     const election = req.election;
 
-    // Check if contract is deployed
+    // Handle undeployed contract gracefully
     if (!election.contractAddress) {
-      return res.status(400).json({
-        message: "Election contract not deployed yet",
+      return res.status(200).json({
+        message: "Election contract is being deployed or not yet deployed",
+        status: "pending_deployment",
+        election: {
+          _id: election._id,
+          title: election.title,
+          phase: election.phase,
+          contractAddress: null,
+        },
         count: 0,
         candidates: [],
       });
     }
 
-    // Get candidates from blockchain (source of truth)
-    const contract = blockchainService.getElectionContractReadOnly(
-      election.contractAddress
-    );
-    const onChainCandidates = await contract.getAllCandidates();
+    // Get candidates from blockchain with error handling
+    try {
+      const contract = blockchainService.getElectionContractReadOnly(
+        election.contractAddress
+      );
+      const onChainCandidates = await contract.getAllCandidates();
 
-    const candidates = onChainCandidates.map((c) => ({
-      id: Number(c.id),
-      name: c.name,
-      partyName: c.partyName,
-      partySymbol: c.partySymbol,
-      voteCount: Number(c.voteCount),
-    }));
+      const candidates = onChainCandidates.map((c) => ({
+        id: Number(c.id),
+        name: c.name,
+        partyName: c.partyName,
+        partySymbol: c.partySymbol,
+        voteCount: Number(c.voteCount),
+      }));
 
-    return res.json({
-      count: candidates.length,
-      candidates,
-    });
+      return res.json({
+        status: "deployed",
+        election: {
+          _id: election._id,
+          title: election.title,
+          phase: election.phase,
+          contractAddress: election.contractAddress,
+        },
+        count: candidates.length,
+        candidates,
+      });
+      
+    } catch (contractError) {
+      // Contract exists but is invalid/corrupted
+      return res.status(200).json({
+        message: "Election contract is invalid or corrupted",
+        status: "contract_error",
+        election: {
+          _id: election._id,
+          title: election.title,
+          phase: election.phase,
+          contractAddress: election.contractAddress,
+        },
+        count: 0,
+        candidates: [],
+        error: contractError.message,
+      });
+    }
   } catch (error) {
     console.error("Failed to fetch candidates:", error);
     return res.status(500).json({
