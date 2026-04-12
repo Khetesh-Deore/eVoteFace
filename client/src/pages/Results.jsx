@@ -2,15 +2,20 @@ import { useState, useEffect } from "react";
 import api from "../utils/api";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import PhaseIndicator from "../components/common/PhaseIndicator";
+import ElectionSelector from "../components/common/ElectionSelector";
+import { useElection } from "../context/ElectionContext";
 
 export default function Results() {
+  const { selectedElectionId } = useElection();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
 
   const load = async () => {
+    if (!selectedElectionId) return;
+    
     try {
-      const res = await api.get("/votes/results");
+      const res = await api.get(`/elections/${selectedElectionId}/votes/results`);
       setData(res.data);
       setLastUpdated(new Date());
     } catch { /* silent */ }
@@ -18,37 +23,54 @@ export default function Results() {
   };
 
   useEffect(() => {
-    load();
+    if (selectedElectionId) {
+      setLoading(true);
+      load();
+    }
+  }, [selectedElectionId]);
+
+  useEffect(() => {
+    if (!selectedElectionId) return;
+    
     // Auto-refresh every 30s during voting phase
     const t = setInterval(load, 30000);
     return () => clearInterval(t);
-  }, []);
+  }, [selectedElectionId]);
+
+  if (!selectedElectionId) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-8 text-center">
+        <p className="text-gray-500">No election selected</p>
+      </div>
+    );
+  }
 
   if (loading) return <LoadingSpinner />;
 
-  const maxVotes = Math.max(...(data?.candidates?.map(c => c.voteCount) || [1]), 1);
-  const isCompleted = data?.phase === "Completed";
+  const maxVotes = Math.max(...(data?.results?.map(c => c.voteCount) || [1]), 1);
+  const isCompleted = data?.election?.phase === "completed";
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       {/* Header */}
       <div className="text-center mb-8">
+        <div className="flex justify-center mb-4">
+          <ElectionSelector />
+        </div>
         <h1 className="text-3xl font-bold text-primary">Election Results</h1>
-        <p className="text-gray-500 text-sm mt-1">eVoteFace General Election 2026</p>
-        {data?.phase && (
+        <p className="text-gray-500 text-sm mt-1">{data?.election?.title || 'Election'}</p>
+        {data?.election?.phase && (
           <div className="flex justify-center mt-3">
-            <PhaseIndicator phase={data.phase} />
+            <PhaseIndicator phase={data.election.phase} />
           </div>
         )}
         {lastUpdated && (
           <p className="text-xs text-gray-400 mt-2">
             Last updated: {lastUpdated.toLocaleTimeString("en-IN")}
-            {data?.phase === "Voting" && " · Auto-refreshes every 30s"}
+            {data?.election?.phase === "voting" && " · Auto-refreshes every 30s"}
           </p>
         )}
-      </div>
-
-      {/* Winner banner — only in Completed phase */}
+      </div>      {/* Winner banner — only in Completed phase */}
       {isCompleted && data?.winner && (
         <div className="card bg-gradient-to-r from-primary to-blue-800 text-white text-center mb-8">
           <p className="text-sm opacity-75 mb-1">🏆 Election Winner</p>
@@ -67,7 +89,7 @@ export default function Results() {
           <div className="text-sm text-gray-500 mt-1">Total Votes Cast</div>
         </div>
         <div className="card text-center">
-          <div className="text-3xl font-bold text-primary">{data?.candidates?.length ?? 0}</div>
+          <div className="text-3xl font-bold text-primary">{data?.results?.length ?? 0}</div>
           <div className="text-sm text-gray-500 mt-1">Candidates</div>
         </div>
       </div>
@@ -78,11 +100,11 @@ export default function Results() {
           {isCompleted ? "Final Results" : "Live Vote Count"}
         </h2>
 
-        {data?.candidates?.length === 0 && (
+        {data?.results?.length === 0 && (
           <p className="text-gray-400 text-center py-6">No candidates registered yet.</p>
         )}
 
-        {data?.candidates?.map((c) => {
+        {data?.results?.map((c) => {
           const pct = data.totalVotes > 0 ? (c.voteCount / data.totalVotes) * 100 : 0;
           const barWidth = maxVotes > 0 ? (c.voteCount / maxVotes) * 100 : 0;
           const isWinner = isCompleted && data.winner?.id === c.id;
@@ -123,7 +145,7 @@ export default function Results() {
       <p className="text-xs text-gray-400 text-center mt-6">
         Results are sourced directly from the Ethereum Sepolia blockchain and cannot be altered.
         <br />
-        Contract: <span className="font-mono">{import.meta.env.VITE_CONTRACT_ADDRESS?.slice(0, 20)}...</span>
+        Contract: <span className="font-mono">{data?.election?.contractAddress?.slice(0, 20)}...</span>
       </p>
     </div>
   );

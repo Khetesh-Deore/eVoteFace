@@ -180,26 +180,27 @@ class ElectionBlockchainService {
   }
 }
 
-// Export singleton instance
+// Create and export singleton instance
 const blockchainService = new ElectionBlockchainService();
 
-// Legacy exports for backward compatibility
-const getContract = () => {
+// Export singleton instance as default
+module.exports = blockchainService;
+
+// Add legacy methods directly to the exported object
+module.exports.getContract = function() {
   console.warn("⚠️  getContract() is deprecated. Use blockchainService.getElectionContract(address)");
-  if (!blockchainService.initialized) blockchainService.init();
+  if (!blockchainService.initialized) {
+    console.warn("Blockchain service not initialized yet");
+  }
+  if (!process.env.CONTRACT_ADDRESS) {
+    throw new Error("CONTRACT_ADDRESS not set in environment");
+  }
   return blockchainService.getElectionContract(process.env.CONTRACT_ADDRESS);
 };
 
-const getProvider = () => {
-  if (!blockchainService.initialized) blockchainService.init();
+module.exports.getProvider = function() {
+  if (!blockchainService.initialized) {
+    console.warn("Blockchain service not initialized yet");
+  }
   return blockchainService.getProvider();
 };
-
-const init = () => {
-  return blockchainService.init();
-};
-
-module.exports = blockchainService;
-module.exports.getContract = getContract;
-module.exports.getProvider = getProvider;
-module.exports.init = init;
