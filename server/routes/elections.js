@@ -115,24 +115,28 @@ router.get("/:electionId", async (req, res) => {
       return res.status(404).json({ message: "Election not found" });
     }
 
-    // Get on-chain stats
+    // Get on-chain stats (only if contract deployed)
     let onChainStats = null;
-    try {
-      const contract = blockchainService.getElectionContractReadOnly(
-        election.contractAddress
-      );
-      const stats = await contract.getElectionStats();
-      onChainStats = {
-        electionId: Number(stats.id),
-        title: stats.title,
-        description: stats.description,
-        phase: stats.phase,
-        numCandidates: Number(stats.numCandidates),
-        numVoters: Number(stats.numVoters),
-        numVotes: Number(stats.numVotes),
-      };
-    } catch (error) {
-      console.warn("Failed to fetch on-chain stats:", error.message);
+    if (election.contractAddress) {
+      try {
+        const contract = blockchainService.getElectionContractReadOnly(
+          election.contractAddress
+        );
+        const stats = await contract.getElectionStats();
+        onChainStats = {
+          electionId: Number(stats.id),
+          title: stats.title,
+          description: stats.description,
+          phase: stats.phase,
+          numCandidates: Number(stats.numCandidates),
+          numVoters: Number(stats.numVoters),
+          numVotes: Number(stats.numVotes),
+        };
+      } catch (error) {
+        // Silently fail - this is expected for elections with invalid/undeployed contracts
+        // Uncomment below for debugging:
+        // console.warn(`Failed to fetch on-chain stats for election ${election._id}:`, error.message);
+      }
     }
 
     // Get off-chain stats

@@ -100,6 +100,20 @@ router.get("/results", async (req, res) => {
   try {
     const election = req.election;
 
+    // Check if contract is deployed
+    if (!election.contractAddress) {
+      return res.status(400).json({
+        message: "Election contract not deployed yet",
+        election: {
+          _id: election._id,
+          title: election.title,
+          phase: election.phase,
+        },
+        results: [],
+        totalVotes: 0,
+      });
+    }
+
     // Get results from blockchain
     const contract = blockchainService.getElectionContractReadOnly(
       election.contractAddress
@@ -126,13 +140,22 @@ router.get("/results", async (req, res) => {
           voteCount: Number(winnerData.voteCount),
         };
       } catch (error) {
-        console.warn("Failed to get winner:", error.message);
+        // Silently fail - this is expected for elections with invalid/undeployed contracts
+        // Uncomment below for debugging:
+        // console.warn(`Failed to get winner for election ${election._id}:`, error.message);
       }
     }
 
     // Get total votes
-    const stats = await contract.getElectionStats();
-    const totalVotes = Number(stats.numVotes);
+    let totalVotes = 0;
+    try {
+      const stats = await contract.getElectionStats();
+      totalVotes = Number(stats.numVotes);
+    } catch (error) {
+      // Silently fail - this is expected for elections with invalid/undeployed contracts
+      // Uncomment below for debugging:
+      // console.warn(`Failed to fetch vote stats for election ${election._id}:`, error.message);
+    }
 
     return res.json({
       election: {
@@ -161,6 +184,15 @@ router.get("/results", async (req, res) => {
 router.get("/candidates", async (req, res) => {
   try {
     const election = req.election;
+
+    // Check if contract is deployed
+    if (!election.contractAddress) {
+      return res.status(400).json({
+        message: "Election contract not deployed yet",
+        count: 0,
+        candidates: [],
+      });
+    }
 
     // Get candidates from blockchain (source of truth)
     const contract = blockchainService.getElectionContractReadOnly(

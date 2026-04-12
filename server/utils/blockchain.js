@@ -194,9 +194,9 @@ module.exports = blockchainService;
 
 // Add legacy methods directly to the exported object
 module.exports.getContract = function() {
-  console.warn("⚠️  getContract() is deprecated. Use blockchainService.getElectionContract(address)");
+  // Silently support legacy code - deprecation warning removed to reduce console noise
   if (!blockchainService.initialized) {
-    console.warn("Blockchain service not initialized yet");
+    throw new Error("Blockchain service not initialized yet");
   }
   if (!process.env.CONTRACT_ADDRESS) {
     throw new Error("CONTRACT_ADDRESS not set in environment");
@@ -206,7 +206,7 @@ module.exports.getContract = function() {
 
 module.exports.getProvider = function() {
   if (!blockchainService.initialized) {
-    console.warn("Blockchain service not initialized yet");
+    throw new Error("Blockchain service not initialized yet");
   }
   return blockchainService.getProvider();
 };

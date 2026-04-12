@@ -1,64 +1,103 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "react-toastify";
+import { useElection } from "../../context/ElectionContext";
 import api from "../../utils/api";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 
 export default function ManageCandidates() {
+  const { selectedElectionId, currentElectionDetails } = useElection();
   const [candidates, setCandidates] = useState([]);
   const [onChainCandidates, setOnChainCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
-  const [phase, setPhase] = useState(null);
   const [form, setForm] = useState({ name: "", partyName: "", partySymbol: "" });
 
   const load = useCallback(async () => {
+    if (!selectedElectionId) {
+      toast.error("No election selected");
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
-      const [cRes, eRes, rRes] = await Promise.all([
-        api.get("/admin/candidates"),
-        api.get("/admin/election"),
-        api.get("/votes/results").catch(() => ({ data: { candidates: [] } })),
+      const [cRes, rRes] = await Promise.all([
+        api.get(`/elections/${selectedElectionId}/admin/candidates`),
+        api.get(`/elections/${selectedElectionId}/votes/results`).catch(() => ({ data: { results: [] } })),
       ]);
-      setCandidates(cRes.data.candidates);
-      setPhase(eRes.data.onChain?.phase);
-      setOnChainCandidates(rRes.data.candidates || []);
-    } catch { toast.error("Failed to load"); }
-    finally { setLoading(false); }
-  }, []);
+      
+      setCandidates(cRes.data.candidates || []);
+      setOnChainCandidates(rRes.data.results || []);
+    } catch (error) {
+      console.error("Failed to load candidates:", error);
+      toast.error(error.response?.data?.message || "Failed to load candidates");
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedElectionId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const addCandidate = async (e) => {
     e.preventDefault();
     if (!form.name.trim() || !form.partyName.trim()) {
-      toast.error("Name and party name are required"); return;
+      toast.error("Name and party name are required");
+      return;
     }
+    
+    if (!selectedElectionId) {
+      toast.error("No election selected");
+      return;
+    }
+
     setAdding(true);
     try {
-      await api.post("/admin/candidates", form);
+      await api.post(`/elections/${selectedElectionId}/admin/candidates`, form);
       toast.success(`${form.name} added to election blockchain`);
       setForm({ name: "", partyName: "", partySymbol: "" });
       load();
-    } catch (err) { toast.error(err.response?.data?.message || "Failed to add"); }
-    finally { setAdding(false); }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to add candidate");
+    } finally {
+      setAdding(false);
+    }
   };
 
   const deleteCandidate = async (id, name) => {
     if (!window.confirm(`Remove "${name}" from election? This calls the smart contract.`)) return;
+    
+    if (!selectedElectionId) {
+      toast.error("No election selected");
+      return;
+    }
+
     try {
-      await api.delete(`/admin/candidates/${id}`);
+      await api.delete(`/elections/${selectedElectionId}/admin/candidates/${id}`);
       toast.success(`${name} removed`);
       load();
-    } catch (err) { toast.error(err.response?.data?.message || "Failed"); }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to remove candidate");
+    }
   };
 
-  const isRegistration = phase === "Registration";
+  const phase = currentElectionDetails?.phase;
+  const isRegistration = phase === "registration";
 
   // Merge DB candidates with on-chain vote counts
   const merged = candidates.map(c => ({
     ...c,
     voteCount: onChainCandidates.find(oc => oc.id === c.onChainId)?.voteCount ?? 0,
   }));
+
+  if (!selectedElectionId) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8 text-center">
+        <p className="text-gray-500">Please select an election first</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -71,7 +110,7 @@ export default function ManageCandidates() {
       {phase && !isRegistration && (
         <div className="bg-yellow-50 border border-yellow-300 rounded p-3 mb-6 text-sm text-yellow-800">
           ⚠️ Candidates can only be added/removed during <strong>Registration</strong> phase.
-          Current phase: <strong>{phase}</strong>
+          Current phase: <strong className="capitalize">{phase}</strong>
         </div>
       )}
 
@@ -123,7 +162,7 @@ export default function ManageCandidates() {
             <h2 className="font-semibold text-primary">
               Registered Candidates ({merged.length})
             </h2>
-            {phase === "Voting" || phase === "Completed" ? (
+            {phase === "voting" || phase === "completed" ? (
               <span className="text-xs text-gray-500">Live vote counts shown</span>
             ) : null}
           </div>
@@ -164,7 +203,7 @@ export default function ManageCandidates() {
                     <span className="badge-info">#{c.onChainId}</span>
                   </td>
                   <td className="px-4 py-3 font-semibold text-primary">
-                    {phase === "Registration" ? "—" : c.voteCount}
+                    {phase === "registration" ? "—" : c.voteCount}
                   </td>
                   <td className="px-4 py-3">
                     {isRegistration ? (

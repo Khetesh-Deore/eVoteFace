@@ -20,11 +20,20 @@ router.get("/", adminAuth, async (req, res) => {
   try {
     const election = req.election;
 
-    // Get on-chain stats
-    const contract = blockchainService.getElectionContractReadOnly(
-      election.contractAddress
-    );
-    const onChainStats = await contract.getElectionStats();
+    // Get on-chain stats (only if contract deployed)
+    let onChainStats = null;
+    if (election.contractAddress) {
+      try {
+        const contract = blockchainService.getElectionContractReadOnly(
+          election.contractAddress
+        );
+        onChainStats = await contract.getElectionStats();
+      } catch (error) {
+        // Silently fail - this is expected for elections with invalid/undeployed contracts
+        // Uncomment below for debugging:
+        // console.warn(`Failed to fetch on-chain stats for election ${election._id}:`, error.message);
+      }
+    }
 
     // Get off-chain stats
     const totalUsers = await User.countDocuments({ electionId: election._id });
@@ -49,13 +58,13 @@ router.get("/", adminAuth, async (req, res) => {
           votedUsers,
           totalCandidates,
         },
-        onChain: {
+        onChain: onChainStats ? {
           electionId: Number(onChainStats.id),
           phase: onChainStats.phase,
           numCandidates: Number(onChainStats.numCandidates),
           numVoters: Number(onChainStats.numVoters),
           numVotes: Number(onChainStats.numVotes),
-        },
+        } : null,
       },
     });
   } catch (error) {
@@ -85,6 +94,13 @@ router.post(
         return res
           .status(400)
           .json({ message: "Candidate name and party name are required" });
+      }
+
+      // Check if election has a contract deployed
+      if (!election.contractAddress) {
+        return res.status(400).json({
+          message: "Election contract not deployed yet. Please deploy the election contract first.",
+        });
       }
 
       // Add candidate to blockchain

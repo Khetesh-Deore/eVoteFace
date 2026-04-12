@@ -28,9 +28,9 @@ router.get("/status", auth, async (req, res) => {
       });
     }
 
-    // Check blockchain registration status
+    // Check blockchain registration status (only if contract deployed)
     let onChainStatus = null;
-    if (voter.walletAddress) {
+    if (voter.walletAddress && election.contractAddress) {
       try {
         const contract = blockchainService.getElectionContractReadOnly(
           election.contractAddress
@@ -42,7 +42,9 @@ router.get("/status", auth, async (req, res) => {
           votedAt: status.votedAt > 0 ? Number(status.votedAt) : null,
         };
       } catch (error) {
-        console.warn("Failed to fetch on-chain status:", error.message);
+        // Silently fail - this is expected for elections with invalid/undeployed contracts
+        // Uncomment below for debugging:
+        // console.warn(`Failed to fetch on-chain status for voter ${voter._id}:`, error.message);
       }
     }
 

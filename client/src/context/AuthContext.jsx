@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import api from "../utils/api";
-import { useElection } from "./ElectionContext";
 
 const AuthContext = createContext(null);
 
@@ -39,11 +38,11 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setUser(null);
     
-    // Clear election cache on logout
+    // Clear election cache on logout (if available)
     try {
-      const electionContext = window.__electionContext__;
-      if (electionContext?.clearCache) {
-        electionContext.clearCache();
+      // Access election context from window if available
+      if (window.__electionContext__?.clearElectionCache) {
+        window.__electionContext__.clearElectionCache();
       }
     } catch (error) {
       console.warn('Failed to clear election cache:', error);

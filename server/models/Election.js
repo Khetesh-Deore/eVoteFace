@@ -9,7 +9,7 @@ const electionSchema = new mongoose.Schema(
       enum: ["registration", "voting", "completed"],
       default: "registration",
     },
-    contractAddress: { type: String, required: true },
+    contractAddress: { type: String, required: false, default: null },
     factoryTxHash:   { type: String },
     admin:       { type: mongoose.Schema.Types.ObjectId, ref: "Admin" },
     isActive:    { type: Boolean, default: true },
@@ -24,8 +24,7 @@ const electionSchema = new mongoose.Schema(
 // ── Indexes ──
 electionSchema.index({ admin: 1 });
 electionSchema.index({ isActive: 1 });
+// Sparse index allows multiple null values but ensures deployed contracts are unique
+electionSchema.index({ contractAddress: 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model("Election", electionSchema);
-
-// Ensure contractAddress is unique
-electionSchema.path('contractAddress').index({ unique: true });
