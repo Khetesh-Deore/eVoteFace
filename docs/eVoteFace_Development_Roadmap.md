@@ -1,5 +1,8 @@
 # eVoteFace — Complete Development Roadmap & Technical Implementation Plan
 
+note: do not create extra file without coding part and no extra explanation
+
+
 > **Project:** Decentralized Online Voting System with Face Recognition + Blockchain  
 > **Stack:** MERN (MongoDB, Express, React, Node.js) + Python (Face Recognition) + Ethereum (Solidity)  
 > **Deployment:** Vercel (Frontend) + Render (Backend) + Hugging Face Spaces (Python AI) + Hardhat/Alchemy (Blockchain)  
@@ -1446,3 +1449,8 @@ Start here when you open your laptop each day:
 ---
 
 *This document covers the complete technical specification for eVoteFace. Read Section 10 (Phase Plan) daily to know what to build next. Do not skip testing phases — catching issues early saves days of debugging.*
+
+
+note: do not create extra file without coding part and no extra explanation
+
+read line ny line and understand the context of project and tell me in one wordunderstand or not in  YES or NO only
