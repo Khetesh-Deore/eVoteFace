@@ -1,42 +1,126 @@
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import api from "../utils/api";
+import { createContext, useState, useContext, useEffect } from 'react';
+import api from '../utils/api';
 
-const ElectionContext = createContext(null);
+const ElectionContext = createContext();
+
+export const useElection = () => {
+  const context = useContext(ElectionContext);
+  if (!context) {
+    throw new Error('useElection must be used within ElectionProvider');
+  }
+  return context;
+};
 
 export const ElectionProvider = ({ children }) => {
-  const [candidates, setCandidates] = useState([]);
-  const [totalVotes, setTotalVotes] = useState(0);
-  const [phase, setPhase]           = useState(null);
-  const [winner, setWinner]         = useState(null);
-  const [loading, setLoading]       = useState(true);
+  const [elections, setElections] = useState([]);
+  const [selectedElection, setSelectedElection] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const refresh = useCallback(async () => {
+  // Fetch all public elections
+  const fetchPublicElections = async () => {
     try {
-      const res = await api.get("/votes/results");
-      setCandidates(res.data.candidates || []);
-      setTotalVotes(res.data.totalVotes || 0);
-      setPhase(res.data.phase || null);
-      setWinner(res.data.winner || null);
-    } catch {
-      // silent fail — results page handles its own error state
+      setLoading(true);
+      setError(null);
+      const response = await api.get('/elections');
+      setElections(response.data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to fetch elections');
+      console.error('Fetch elections error:', err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
-  useEffect(() => {
-    refresh();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Fetch voter's registered elections
+  const fetchVoterElections = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await api.get('/voters/elections');
+      setElections(response.data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to fetch your elections');
+      console.error('Fetch voter elections error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch specific election details
+  const fetchElectionById = async (electionId) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await api.get(`/elections/${electionId}`);
+      setSelectedElection(response.data);
+      return response.data;
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to fetch election details');
+      console.error('Fetch election error:', err);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch election results
+  const fetchElectionResults = async (electionId) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await api.get(`/votes/results/${electionId}`);
+      return response.data;
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to fetch results');
+      console.error('Fetch results error:', err);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Get voter status for specific election
+  const getVoterStatus = async (electionId) => {
+    try {
+      const response = await api.get(`/voters/elections/${electionId}/status`);
+      return response.data;
+    } catch (err) {
+      console.error('Get voter status error:', err);
+      return null;
+    }
+  };
+
+  // Clear selected election
+  const clearSelectedElection = () => {
+    setSelectedElection(null);
+  };
+
+  // Refresh elections list
+  const refreshElections = () => {
+    fetchPublicElections();
+  };
+
+  const value = {
+    elections,
+    selectedElection,
+    setSelectedElection,
+    loading,
+    error,
+    fetchPublicElections,
+    fetchVoterElections,
+    fetchElectionById,
+    fetchElectionResults,
+    getVoterStatus,
+    clearSelectedElection,
+    refreshElections
+  };
 
   return (
-    <ElectionContext.Provider value={{ candidates, totalVotes, phase, winner, loading, refresh }}>
+    <ElectionContext.Provider value={value}>
       {children}
     </ElectionContext.Provider>
   );
 };
 
-export const useElection = () => {
-  const ctx = useContext(ElectionContext);
-  if (!ctx) throw new Error("useElection must be used inside ElectionProvider");
-  return ctx;
-};
+export default ElectionContext;
