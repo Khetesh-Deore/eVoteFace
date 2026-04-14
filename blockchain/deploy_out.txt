@@ -1,0 +1,14 @@
+─────────────────────────────────────
+eVoteFace v2 — Deploying ElectionFactory
+─────────────────────────────────────
+Deploying from: 0x5b979D566867F2f5abaEE5d51292E1bd1740f103
+Balance: 0.047794098260404815 ETH
+✅ ElectionFactory deployed to: 0x0493732CE8A223fedbC7FEE3f5780D7c46385eb5
+   Tx hash: 0x861ef615f3416af370ad8139e789108613bd1b33c6a51e8ad3ecb6c3518ac049
+✅ Saved to deployedAddresses.json
+
+NEXT STEPS:
+  FACTORY_CONTRACT_ADDRESS=0x0493732CE8A223fedbC7FEE3f5780D7c46385eb5
+  Add to server/.env and client/.env
+  Then run: node scripts/extractABI.js
+─────────────────────────────────────
