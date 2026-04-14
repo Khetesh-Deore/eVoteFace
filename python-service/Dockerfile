@@ -1,29 +1,23 @@
-FROM animcogn/face_recognition:cpu
+FROM tensorflow/tensorflow:2.15.0
 
 WORKDIR /app
 
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
+    libgl1-mesa-glx \
     libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
+# Copy requirements and install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy application code
 COPY app.py .
-COPY face_utils.py .
-COPY image_utils.py .
+COPY .env .
 
-ENV FACE_MATCH_TOLERANCE=0.6
-ENV MAX_IMAGE_WIDTH=800
-ENV MAX_IMAGE_HEIGHT=800
-ENV MAX_FILE_SIZE_MB=5
-ENV PORT=8000
-ENV DEBUG=False
-
+# Expose port
 EXPOSE 8000
 
-CMD gunicorn --workers 1 --timeout 120 --bind 0.0.0.0:$PORT app:app
+# Run with gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120", "app:app"]
