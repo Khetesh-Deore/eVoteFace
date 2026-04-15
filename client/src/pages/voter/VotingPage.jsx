@@ -174,7 +174,7 @@ const VotingPage = () => {
       const contract = await getElectionContract(election.contractAddress);
 
       // Cast vote on blockchain
-      const tx = await contract.vote(selectedCandidate.onChainId);
+      const tx = await contract.castVote(selectedCandidate.onChainId);
       toast.info('Transaction submitted. Waiting for confirmation...');
 
       const receipt = await tx.wait();

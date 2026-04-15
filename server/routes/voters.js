@@ -125,6 +125,14 @@ router.post('/elections/:electionId/wallet', auth, async (req, res) => {
       return res.status(400).json({ message: 'Invalid wallet address format' });
     }
 
+    // Prevent admin wallet from being used
+    const { ADMIN_WALLET_ADDRESS } = require('../utils/blockchain');
+    if (walletAddress.toLowerCase() === ADMIN_WALLET_ADDRESS.toLowerCase()) {
+      return res.status(400).json({ 
+        message: 'Admin wallet cannot be used as voter wallet. Please use a different wallet address.' 
+      });
+    }
+
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -176,6 +184,85 @@ router.post('/elections/:electionId/wallet', auth, async (req, res) => {
   } catch (error) {
     console.error('Save wallet error:', error);
     res.status(500).json({ message: 'Server error saving wallet address' });
+  }
+});
+
+// @route   POST /api/voters/elections/:electionId/request-registration
+// @desc    Request registration for specific election
+// @access  Private
+router.post('/elections/:electionId/request-registration', auth, async (req, res) => {
+  try {
+    const { electionId } = req.params;
+    const { walletAddress } = req.body;
+
+    if (!walletAddress) {
+      return res.status(400).json({ message: 'Wallet address is required' });
+    }
+
+    // Validate wallet address format
+    if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+      return res.status(400).json({ message: 'Invalid wallet address format' });
+    }
+
+    // Prevent admin wallet from being used
+    const { ADMIN_WALLET_ADDRESS } = require('../utils/blockchain');
+    if (walletAddress.toLowerCase() === ADMIN_WALLET_ADDRESS.toLowerCase()) {
+      return res.status(400).json({ 
+        message: 'Admin wallet cannot be used as voter wallet. Please use a different wallet address.' 
+      });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const election = await Election.findById(electionId);
+    if (!election) {
+      return res.status(404).json({ message: 'Election not found' });
+    }
+
+    // Check if already registered
+    const existingElection = user.elections.find(
+      e => e.electionId.toString() === electionId
+    );
+
+    if (existingElection) {
+      return res.status(400).json({ 
+        message: 'You are already registered for this election' 
+      });
+    }
+
+    // Check if wallet is already used by another user in this election
+    const existingUser = await User.findOne({
+      'elections.electionId': electionId,
+      'elections.walletAddress': walletAddress,
+      _id: { $ne: user._id }
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ 
+        message: 'This wallet address is already registered by another voter for this election' 
+      });
+    }
+
+    // Add election participation with pending status and wallet address
+    user.elections.push({
+      electionId: election._id,
+      walletAddress: walletAddress,
+      isVerified: false
+    });
+
+    await user.save();
+
+    res.json({
+      message: 'Registration request submitted successfully. Waiting for admin approval.',
+      electionId: election._id,
+      walletAddress: walletAddress
+    });
+  } catch (error) {
+    console.error('Request registration error:', error);
+    res.status(500).json({ message: 'Server error requesting registration' });
   }
 });
 

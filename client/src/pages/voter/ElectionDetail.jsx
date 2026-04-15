@@ -17,6 +17,8 @@ const ElectionDetail = () => {
   const [results, setResults] = useState(null);
   const [voterStatus, setVoterStatus] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [requestingRegistration, setRequestingRegistration] = useState(false);
+  const [walletAddressInput, setWalletAddressInput] = useState('');
 
   useEffect(() => {
     loadElectionData();
@@ -51,6 +53,38 @@ const ElectionDetail = () => {
       toast.error('Failed to load election details');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRequestRegistration = async () => {
+    if (!walletAddressInput) {
+      toast.error('Please enter your wallet address');
+      return;
+    }
+
+    // Validate wallet address format
+    if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddressInput)) {
+      toast.error('Invalid wallet address format');
+      return;
+    }
+
+    try {
+      setRequestingRegistration(true);
+      
+      await api.post(`/voters/elections/${electionId}/request-registration`, {
+        walletAddress: walletAddressInput
+      });
+      
+      toast.success('Registration request sent! Waiting for admin approval.');
+      
+      // Reload election data
+      await loadElectionData();
+      setWalletAddressInput('');
+    } catch (error) {
+      console.error('Request registration error:', error);
+      toast.error(error.response?.data?.message || 'Failed to request registration');
+    } finally {
+      setRequestingRegistration(false);
     }
   };
 
@@ -205,11 +239,47 @@ const ElectionDetail = () => {
                   <svg className="w-6 h-6 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <div>
+                  <div className="flex-1">
                     <p className="font-medium text-blue-900">Not Registered</p>
-                    <p className="text-sm text-blue-700 mt-1">
-                      You are not registered for this election. Please contact the election administrator to register.
+                    <p className="text-sm text-blue-700 mt-1 mb-3">
+                      You are not registered for this election. Click below to request registration.
                     </p>
+                    
+                    {/* Wallet Address Input */}
+                    <div className="bg-white rounded-lg p-3 mb-3 border border-blue-200">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Your MetaMask Wallet Address (Required)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="0x..."
+                        value={walletAddressInput}
+                        onChange={(e) => setWalletAddressInput(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500"
+                      />
+                      <div className="mt-2 space-y-1">
+                        <p className="text-xs text-gray-600 flex items-center gap-1">
+                          <span>💡</span>
+                          <span>Open MetaMask → Click account name → Copy address</span>
+                        </p>
+                        <p className="text-xs text-red-600 flex items-center gap-1">
+                          <span>⚠️</span>
+                          <span>Do NOT use admin wallet: 0x5b97...f103</span>
+                        </p>
+                        <p className="text-xs text-blue-600 flex items-center gap-1">
+                          <span>✓</span>
+                          <span>You can use different wallets for different elections</span>
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={handleRequestRegistration}
+                      disabled={requestingRegistration || !walletAddressInput}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 font-medium transition"
+                    >
+                      {requestingRegistration ? 'Requesting...' : 'Request Registration'}
+                    </button>
                   </div>
                 </div>
               </div>

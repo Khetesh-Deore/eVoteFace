@@ -314,6 +314,21 @@ const OverviewTab = ({ election, onPhaseChange, getPhaseColor }) => {
       {/* Phase Control */}
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-xl font-semibold mb-4">Phase Control</h2>
+        
+        {election.phase === 'voting' && (
+          <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <p className="text-sm text-yellow-800 flex items-start gap-2">
+              <span className="text-lg">⚠️</span>
+              <span>
+                <strong>Cannot go back to Registration:</strong> The smart contract only allows forward phase transitions 
+                (Registration → Voting → Completed). You can only reset to Registration if ZERO votes have been cast.
+                <br /><br />
+                <strong>Solution:</strong> To register more voters, create a new election.
+              </span>
+            </p>
+          </div>
+        )}
+        
         <div className="flex items-center gap-4">
           <span className="text-gray-700">Current Phase:</span>
           <span className={`px-4 py-2 rounded-full font-medium ${getPhaseColor(election.phase)}`}>
@@ -325,6 +340,7 @@ const OverviewTab = ({ election, onPhaseChange, getPhaseColor }) => {
             onClick={() => onPhaseChange('registration')}
             disabled={election.phase === 'registration'}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            title={election.phase === 'voting' ? 'Cannot go back after voting started' : ''}
           >
             Set to Registration
           </button>
@@ -482,8 +498,6 @@ const CandidatesTab = ({ election, candidates, onAddCandidate, onRemoveCandidate
 
 // Voters Tab Component
 const VotersTab = ({ election, voters, onApproveVoter, onUploadFace, onRegisterOnChain, onRemoveVoter }) => {
-  const [selectedVoter, setSelectedVoter] = useState(null);
-  const [walletAddress, setWalletAddress] = useState('');
   const [faceUploadModal, setFaceUploadModal] = useState(null);
   const [uploadMethod, setUploadMethod] = useState('file'); // 'file' or 'webcam'
   const [capturedImage, setCapturedImage] = useState(null);
@@ -526,20 +540,27 @@ const VotersTab = ({ election, voters, onApproveVoter, onUploadFace, onRegisterO
     handleFaceUpload(userId, file);
   };
 
-  const handleRegisterOnChain = (userId) => {
-    if (!walletAddress) {
-      toast.error('Please enter wallet address');
-      return;
-    }
-    onRegisterOnChain(userId, walletAddress);
-    setSelectedVoter(null);
-    setWalletAddress('');
-  };
-
   return (
     <div className="bg-white rounded-lg shadow">
       <div className="px-6 py-4 border-b border-gray-200">
         <h2 className="text-xl font-semibold">Voters Management</h2>
+        {election.phase !== 'registration' && (
+          <div className="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <p className="text-sm text-yellow-800 flex items-center gap-2">
+              <span>⚠️</span>
+              <span>
+                <strong>Phase Warning:</strong> Election is in <strong>{election.phase}</strong> phase. 
+                Voter registration on blockchain requires <strong>registration</strong> phase. 
+                <button
+                  onClick={() => window.location.href = `#overview`}
+                  className="ml-2 text-blue-600 hover:underline font-medium"
+                >
+                  Change Phase →
+                </button>
+              </span>
+            </p>
+          </div>
+        )}
       </div>
       {voters.length === 0 ? (
         <div className="px-6 py-8 text-center text-gray-500">
@@ -592,15 +613,47 @@ const VotersTab = ({ election, voters, onApproveVoter, onUploadFace, onRegisterO
                     )}
                   </td>
                   <td className="px-6 py-4">
-                    {voter.electionData?.isRegisteredOnChain ? (
-                      <span className="text-xs text-green-600">✓ Registered</span>
+                    {voter.electionData?.walletAddress ? (
+                      <div className="text-xs">
+                        <div className="flex items-center gap-2">
+                          <span 
+                            className="font-mono cursor-help" 
+                            title={voter.electionData.walletAddress}
+                          >
+                            {voter.electionData.walletAddress.slice(0, 6)}...{voter.electionData.walletAddress.slice(-4)}
+                          </span>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(voter.electionData.walletAddress);
+                              toast.success('Wallet address copied!');
+                            }}
+                            className="text-gray-400 hover:text-gray-600"
+                            title="Copy full address"
+                          >
+                            📋
+                          </button>
+                        </div>
+                        {voter.electionData?.isRegisteredOnChain ? (
+                          <span className="text-green-600">✓ On-Chain</span>
+                        ) : voter.electionData?.isVerified ? (
+                          election.phase === 'registration' ? (
+                            <button
+                              onClick={() => onRegisterOnChain(voter._id, voter.electionData.walletAddress)}
+                              className="text-blue-600 hover:underline"
+                            >
+                              Register On-Chain
+                            </button>
+                          ) : (
+                            <span className="text-yellow-600" title="Change phase to registration first">
+                              ⚠️ Wrong Phase
+                            </span>
+                          )
+                        ) : (
+                          <span className="text-yellow-600">Pending Approval</span>
+                        )}
+                      </div>
                     ) : (
-                      <button
-                        onClick={() => setSelectedVoter(voter._id)}
-                        className="text-xs text-blue-600 hover:underline"
-                      >
-                        Register
-                      </button>
+                      <span className="text-xs text-gray-400">No wallet provided</span>
                     )}
                   </td>
                   <td className="px-6 py-4 space-x-2">
@@ -625,39 +678,6 @@ const VotersTab = ({ election, voters, onApproveVoter, onUploadFace, onRegisterO
               ))}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {/* Register On-Chain Modal */}
-      {selectedVoter && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold mb-4">Register Voter On-Chain</h3>
-            <input
-              type="text"
-              placeholder="Enter wallet address"
-              value={walletAddress}
-              onChange={(e) => setWalletAddress(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4"
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setSelectedVoter(null);
-                  setWalletAddress('');
-                }}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleRegisterOnChain(selectedVoter)}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Register
-              </button>
-            </div>
-          </div>
         </div>
       )}
 

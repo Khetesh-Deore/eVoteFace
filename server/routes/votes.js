@@ -163,11 +163,11 @@ router.get('/results/:electionId', async (req, res) => {
     // Get all candidates with vote counts
     const candidates = [];
     for (let i = 1; i <= totalCandidates; i++) {
-      const candidate = await contract.candidates(i);
+      const candidate = await contract.getCandidate(i);
       candidates.push({
         id: Number(candidate.id),
         name: candidate.name,
-        party: candidate.party,
+        party: candidate.partyName,
         partySymbol: candidate.partySymbol,
         voteCount: candidate.voteCount.toString()
       });

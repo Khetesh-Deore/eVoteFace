@@ -193,21 +193,38 @@ router.post('/admin/elections/:electionId/phase', auth, adminAuth, async (req, r
     const currentPhase = await contract.currentPhase();
     const totalVotesCast = await contract.totalVotesCast();
 
+    console.log('Phase change attempt:', {
+      currentPhase: currentPhase.toString(),
+      requestedPhase: phase,
+      totalVotesCast: totalVotesCast.toString()
+    });
+
     // Phase mapping: 0 = Registration, 1 = Voting, 2 = Completed
     const phaseMap = { registration: 0, voting: 1, completed: 2 };
     const newPhaseValue = phaseMap[phase];
 
-    // Validate phase transition
-    if (currentPhase === 1 && newPhaseValue === 0) {
+    // Check if this is a forward transition
+    if (newPhaseValue === Number(currentPhase) + 1) {
+      console.log('Forward transition detected');
+    } else if (currentPhase === 1 && newPhaseValue === 0) {
+      console.log('Backward transition (voting to registration) detected');
       // Reset from Voting to Registration
       if (totalVotesCast > 0) {
         return res.status(400).json({ 
-          message: 'Cannot reset to registration phase after votes have been cast' 
+          message: 'Cannot reset to registration phase after votes have been cast',
+          totalVotesCast: totalVotesCast.toString()
         });
       }
     } else if (newPhaseValue < currentPhase) {
       return res.status(400).json({ 
-        message: 'Cannot move to a previous phase (except voting to registration with no votes)' 
+        message: 'Cannot move to a previous phase (except voting to registration with no votes)',
+        currentPhase: currentPhase.toString(),
+        requestedPhase: newPhaseValue.toString()
+      });
+    } else if (newPhaseValue === Number(currentPhase)) {
+      return res.status(400).json({ 
+        message: 'Election is already in this phase',
+        currentPhase: phase
       });
     }
 
@@ -227,7 +244,43 @@ router.post('/admin/elections/:electionId/phase', auth, adminAuth, async (req, r
     });
   } catch (error) {
     console.error('Change phase error:', error);
-    res.status(500).json({ message: 'Server error changing phase' });
+    console.error('Error details:', {
+      message: error.message,
+      reason: error.reason,
+      code: error.code
+    });
+    
+    if (error.message && error.message.includes('action not allowed in current phase')) {
+      return res.status(400).json({ 
+        message: 'Phase change not allowed. The smart contract rejected this transition.',
+        hint: 'This contract may be using old logic. Try creating a new election.'
+      });
+    }
+    
+    if (error.message && error.message.includes('Can only advance to the next phase')) {
+      return res.status(400).json({ 
+        message: 'This election contract is outdated and has restrictive phase logic.',
+        solution: 'Please create a new election. The old contract does not support the current phase transition logic.'
+      });
+    }
+    
+    if (error.message && error.message.includes('cannot reset phase after votes')) {
+      return res.status(400).json({ 
+        message: 'Cannot reset to registration phase because votes have already been cast in this election.'
+      });
+    }
+    
+    if (error.reason) {
+      return res.status(400).json({ 
+        message: error.reason,
+        hint: 'If this is an old election, create a new one with the updated contract.'
+      });
+    }
+    
+    res.status(500).json({ 
+      message: 'Server error changing phase',
+      details: error.message
+    });
   }
 });
 

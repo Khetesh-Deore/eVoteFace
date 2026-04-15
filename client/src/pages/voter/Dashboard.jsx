@@ -19,6 +19,8 @@ const Dashboard = () => {
   const loadElections = async () => {
     try {
       setLoading(true);
+      
+      // Fetch voter's registered elections
       const data = await fetchVoterElections();
       if (data && Array.isArray(data)) {
         setElections(data);

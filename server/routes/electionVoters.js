@@ -105,13 +105,28 @@ router.post('/admin/elections/:electionId/voters/:userId/register-onchain', auth
     const { electionId, userId } = req.params;
     const { walletAddress } = req.body;
 
+    console.log('Register on-chain request:', { electionId, userId, walletAddress });
+
     if (!walletAddress) {
       return res.status(400).json({ message: 'Wallet address is required' });
+    }
+
+    // Validate wallet address format
+    if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+      return res.status(400).json({ message: 'Invalid wallet address format' });
     }
 
     const election = await Election.findById(electionId);
     if (!election) {
       return res.status(404).json({ message: 'Election not found' });
+    }
+
+    // Check election phase
+    if (election.phase !== 'registration') {
+      return res.status(400).json({ 
+        message: `Cannot register voters during ${election.phase} phase. Please change election phase to "registration" first.`,
+        currentPhase: election.phase
+      });
     }
 
     const user = await User.findById(userId);
@@ -132,10 +147,29 @@ router.post('/admin/elections/:electionId/voters/:userId/register-onchain', auth
       return res.status(400).json({ message: 'User must be approved first' });
     }
 
-    // Register on blockchain
+    // Check if wallet is already registered on-chain
     const contract = getElectionContract(election.contractAddress);
+    
+    console.log('Checking voter status on-chain...');
+    const voterStatus = await contract.getVoterStatus(walletAddress);
+    
+    if (voterStatus[0]) {
+      console.log('Wallet already registered on-chain');
+      // Update local status
+      electionData.walletAddress = walletAddress;
+      electionData.isRegisteredOnChain = true;
+      await user.save();
+      
+      return res.status(400).json({ message: 'Wallet already registered on blockchain' });
+    }
+
+    // Register on blockchain
+    console.log('Registering voter on blockchain...');
     const tx = await contract.registerVoter(walletAddress);
+    console.log('Transaction sent:', tx.hash);
+    
     const receipt = await tx.wait();
+    console.log('Transaction confirmed:', receipt.hash);
 
     // Update user data
     electionData.walletAddress = walletAddress;
@@ -150,11 +184,32 @@ router.post('/admin/elections/:electionId/voters/:userId/register-onchain', auth
   } catch (error) {
     console.error('Register voter on-chain error:', error);
     
+    if (error.message && error.message.includes('action not allowed in current phase')) {
+      return res.status(400).json({ 
+        message: 'Cannot register voters during this phase. Change election to "registration" phase first.',
+        hint: 'Go to Overview tab → Set to Registration'
+      });
+    }
+    
     if (error.message && error.message.includes('already registered')) {
       return res.status(400).json({ message: 'Wallet already registered on this election' });
     }
     
-    res.status(500).json({ message: 'Server error registering voter on blockchain' });
+    if (error.message && error.message.includes('admin cannot be a voter')) {
+      return res.status(400).json({ message: 'Admin wallet cannot be registered as a voter. Please use a different wallet address.' });
+    }
+    
+    if (error.code === 'CALL_EXCEPTION') {
+      return res.status(400).json({ 
+        message: 'Transaction failed. The wallet address may be invalid or already registered.',
+        details: error.message
+      });
+    }
+    
+    res.status(500).json({ 
+      message: 'Server error registering voter on blockchain',
+      details: error.message
+    });
   }
 });
 
