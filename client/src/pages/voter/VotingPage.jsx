@@ -101,6 +101,8 @@ const VotingPage = () => {
       const response = await api.post('/face/verify', {
         liveImageBase64: liveImage,
         electionId
+      }, {
+        timeout: 60000 // Increase timeout to 60 seconds
       });
 
       if (response.data.match) {
@@ -113,7 +115,11 @@ const VotingPage = () => {
       }
     } catch (error) {
       console.error('Face verification error:', error);
-      toast.error(error.response?.data?.message || 'Face verification failed');
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        toast.error('Face verification is taking too long. Please ensure the Python service is running and try again.');
+      } else {
+        toast.error(error.response?.data?.message || 'Face verification failed');
+      }
       setLiveImage(null);
     } finally {
       setProcessing(false);
@@ -268,8 +274,7 @@ const VotingPage = () => {
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800">
-                <strong>Registered Wallet:</strong>{' '}
-                <span className="font-mono">{voterStatus?.walletAddress}</span>
+                <strong>Note:</strong> You can use any MetaMask wallet that is registered on the blockchain for this election.
               </p>
             </div>
 
@@ -304,22 +309,16 @@ const VotingPage = () => {
                   Switch to Sepolia
                 </button>
               </div>
-            ) : address.toLowerCase() !== voterStatus?.walletAddress.toLowerCase() ? (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-red-800">
-                  <strong>Error:</strong> Connected wallet does not match your registered wallet.
-                </p>
-                <p className="text-sm text-red-600 mt-2">
-                  Connected: <span className="font-mono">{address}</span>
-                </p>
-              </div>
             ) : (
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                 <p className="text-green-800 flex items-center gap-2">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  Wallet verified! Proceeding to face verification...
+                  Wallet connected! Proceeding to face verification...
+                </p>
+                <p className="text-sm text-green-700 mt-2">
+                  Connected: <span className="font-mono">{address}</span>
                 </p>
               </div>
             )}

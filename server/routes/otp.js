@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const OTP = require('../models/OTP');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
-const { sendOTPEmail } = require('../utils/mailer');
+const { sendOTP } = require('../utils/mailer');
 
 // Rate limiting map (in production, use Redis)
 const otpRateLimits = new Map();
@@ -96,7 +96,7 @@ router.post('/send', auth, async (req, res) => {
     await otp.save();
 
     // Send OTP via email
-    await sendOTPEmail(user.email, otpCode, user.fullName);
+    await sendOTP(user.email, otpCode, user.fullName);
 
     // Mask email for response
     const emailParts = user.email.split('@');
@@ -109,6 +109,17 @@ router.post('/send', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Send OTP error:', error);
+
+    if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+      return res.status(503).json({ message: 'Email service unavailable. Check EMAIL_HOST configuration.' });
+    }
+    if (error.responseCode === 535 || error.responseCode === 534) {
+      return res.status(503).json({ message: 'Email authentication failed. Check EMAIL_USER and EMAIL_PASS in .env' });
+    }
+    if (error.message && error.message.includes('verify')) {
+      return res.status(503).json({ message: 'Cannot connect to email server. Check email configuration.' });
+    }
+
     res.status(500).json({ message: 'Server error sending OTP' });
   }
 });

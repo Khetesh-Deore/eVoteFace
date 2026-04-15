@@ -303,11 +303,11 @@ router.get('/admin/elections/:electionId/results', auth, adminAuth, async (req, 
     const candidates = [];
 
     for (let i = 1; i <= totalCandidates; i++) {
-      const candidate = await contract.candidates(i);
+      const candidate = await contract.getCandidate(i);
       candidates.push({
-        id: candidate.id,
+        id: Number(candidate.id),
         name: candidate.name,
-        party: candidate.party,
+        party: candidate.partyName,
         voteCount: candidate.voteCount.toString()
       });
     }
@@ -316,12 +316,12 @@ router.get('/admin/elections/:electionId/results', auth, adminAuth, async (req, 
     let winner = null;
     const currentPhase = await contract.currentPhase();
     
-    if (currentPhase === 2) { // Completed
+    if (Number(currentPhase) === 2) { // Completed
       const winnerData = await contract.getWinner();
       winner = {
-        id: winnerData.id,
+        id: Number(winnerData.id),
         name: winnerData.name,
-        party: winnerData.party,
+        party: winnerData.partyName,
         voteCount: winnerData.voteCount.toString()
       };
     }
