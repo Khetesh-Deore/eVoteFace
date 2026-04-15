@@ -36,12 +36,11 @@ const VotingPage = () => {
 
   useEffect(() => {
     // Auto-advance to step 2 if wallet is connected and verified
-    if (currentStep === 1 && isConnected && isCorrectNetwork && voterStatus?.walletAddress) {
-      if (address.toLowerCase() === voterStatus.walletAddress.toLowerCase()) {
-        setCurrentStep(2);
-      }
+    if (currentStep === 1 && isConnected && isCorrectNetwork && voterStatus?.isRegisteredOnChain) {
+      // Allow any wallet that is registered on-chain for this election
+      setCurrentStep(2);
     }
-  }, [isConnected, isCorrectNetwork, address, voterStatus, currentStep]);
+  }, [isConnected, isCorrectNetwork, voterStatus, currentStep]);
 
   const loadElectionData = async () => {
     try {
