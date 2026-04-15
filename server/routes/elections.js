@@ -5,7 +5,7 @@ const Candidate = require('../models/Candidate');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 const adminAuth = require('../middleware/adminAuth');
-const { getFactoryContract, getElectionContractReadOnly } = require('../utils/blockchain');
+const { getFactoryContract, getElectionContract, getElectionContractReadOnly, ADMIN_WALLET_ADDRESS } = require('../utils/blockchain');
 
 // @route   POST /api/admin/elections
 // @desc    Create new election (deploys contract via factory)
@@ -30,12 +30,13 @@ router.post('/admin/elections', auth, adminAuth, async (req, res) => {
     // Deploy election contract via factory
     const factory = getFactoryContract();
     
+    // Use admin wallet address (the wallet that manages all elections)
     const tx = await factory.createElection(
       title,
       description,
       Math.floor(start.getTime() / 1000),
       Math.floor(end.getTime() / 1000),
-      req.user.id // Admin address as election admin
+      ADMIN_WALLET_ADDRESS // Admin wallet address as election admin
     );
 
     const receipt = await tx.wait();
@@ -56,7 +57,7 @@ router.post('/admin/elections', auth, adminAuth, async (req, res) => {
       title,
       description,
       contractAddress,
-      adminId: req.user.id,
+      adminId: req.user._id, // MongoDB admin ID from auth middleware
       startTime: start,
       endTime: end,
       phase: 'registration'

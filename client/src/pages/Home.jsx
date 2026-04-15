@@ -8,7 +8,8 @@ export default function Home() {
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
-    api.get("/votes/results").then(r => setStats(r.data)).catch(() => {});
+    // Remove old stats fetching since we don't have a single election anymore
+    setStats(null);
   }, []);
 
   const steps = [
@@ -42,27 +43,7 @@ export default function Home() {
             Blockchain Technology, and Multi-Factor Authentication.
           </p>
 
-          {/* Live stats */}
-          {stats && (
-            <div className="flex justify-center gap-6 mb-8 text-sm">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-accent">{stats.totalVotes}</div>
-                <div className="text-blue-300">Votes Cast</div>
-              </div>
-              <div className="w-px bg-white/20" />
-              <div className="text-center">
-                <div className="text-2xl font-bold text-accent">{stats.candidates?.length}</div>
-                <div className="text-blue-300">Candidates</div>
-              </div>
-              <div className="w-px bg-white/20" />
-              <div className="text-center">
-                <div className={`text-2xl font-bold ${stats.phase === "Voting" ? "text-green-400" : "text-accent"}`}>
-                  {stats.phase}
-                </div>
-                <div className="text-blue-300">Phase</div>
-              </div>
-            </div>
-          )}
+          {/* Stats removed for multi-election */}
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             {user ? (
@@ -79,8 +60,8 @@ export default function Home() {
                 </Link>
               </>
             )}
-            <Link to="/results" className="bg-white/10 text-white border border-white/30 px-8 py-3 rounded font-semibold hover:bg-white/20 transition-colors">
-              View Results
+            <Link to="/elections" className="bg-white/10 text-white border border-white/30 px-8 py-3 rounded font-semibold hover:bg-white/20 transition-colors">
+              Browse Elections
             </Link>
           </div>
         </div>
@@ -139,8 +120,8 @@ export default function Home() {
               Register Now
             </Link>
           )}
-          <Link to="/results" className="bg-white/10 border border-white/30 text-white px-8 py-3 rounded font-semibold hover:bg-white/20 transition-colors">
-            View Live Results
+          <Link to="/elections" className="bg-white/10 border border-white/30 text-white px-8 py-3 rounded font-semibold hover:bg-white/20 transition-colors">
+            Browse Elections
           </Link>
         </div>
       </section>

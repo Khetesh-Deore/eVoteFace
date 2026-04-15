@@ -13,7 +13,7 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(localStorage.getItem('evf_token'));
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
       const { token: authToken, user: userData, admin: adminData } = response.data;
 
       setToken(authToken);
-      localStorage.setItem('token', authToken);
+      localStorage.setItem('evf_token', authToken);
 
       const userInfo = userData || adminData;
       setUser(userInfo);
@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setUser(null);
     setIsAdmin(false);
-    localStorage.removeItem('token');
+    localStorage.removeItem('evf_token');
   };
 
   // Register function
@@ -73,14 +73,16 @@ export const AuthProvider = ({ children }) => {
   // Check authentication on mount
   useEffect(() => {
     const initAuth = async () => {
-      if (token) {
+      const storedToken = localStorage.getItem('evf_token');
+      if (storedToken) {
+        setToken(storedToken);
         await getCurrentUser();
       }
       setLoading(false);
     };
 
     initAuth();
-  }, [token]);
+  }, []);
 
   const value = {
     user,

@@ -24,9 +24,11 @@ export const ElectionProvider = ({ children }) => {
       setError(null);
       const response = await api.get('/elections');
       setElections(response.data);
+      return response.data;
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch elections');
       console.error('Fetch elections error:', err);
+      return [];
     } finally {
       setLoading(false);
     }
@@ -39,9 +41,11 @@ export const ElectionProvider = ({ children }) => {
       setError(null);
       const response = await api.get('/voters/elections');
       setElections(response.data);
+      return response.data;
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch your elections');
       console.error('Fetch voter elections error:', err);
+      return [];
     } finally {
       setLoading(false);
     }

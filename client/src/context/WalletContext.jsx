@@ -87,6 +87,15 @@ export const WalletProvider = ({ children }) => {
     }
   };
 
+  // Switch to Sepolia
+  const switchToSepolia = async () => {
+    const SEPOLIA_CHAIN_ID = 11155111;
+    await switchNetwork(SEPOLIA_CHAIN_ID);
+  };
+
+  // Check if on correct network (Sepolia)
+  const isCorrectNetwork = chainId === 11155111;
+
   // Get wallet for specific election (from user data)
   const getWalletForElection = (electionId, userData) => {
     if (!userData || !userData.elections) {
@@ -166,10 +175,12 @@ export const WalletProvider = ({ children }) => {
     chainId,
     isConnected,
     isConnecting,
+    isCorrectNetwork,
     isMetaMaskInstalled,
     connectWallet,
     disconnectWallet,
     switchNetwork,
+    switchToSepolia,
     getWalletForElection
   };
 

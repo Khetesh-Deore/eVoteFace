@@ -20,11 +20,13 @@ app.use(express.urlencoded({ extended: true }));
 
 // ── Routes ──
 app.use("/api/auth",    require("./routes/auth"));
+app.use("/api",         require("./routes/elections"));
+app.use("/api",         require("./routes/electionVoters"));
+app.use("/api",         require("./routes/electionCandidates"));
 app.use("/api/voters",  require("./routes/voters"));
 app.use("/api/otp",     require("./routes/otp"));
 app.use("/api/face",    require("./routes/face"));
 app.use("/api/votes",   require("./routes/votes"));
-app.use("/api/admin",   require("./routes/admin"));
 
 // ── Health check ──
 app.get("/api/health", (req, res) => {

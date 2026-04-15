@@ -14,6 +14,9 @@ const adminWallet = new ethers.Wallet(process.env.ADMIN_WALLET_PRIVATE_KEY, prov
 // Factory contract address
 const FACTORY_CONTRACT_ADDRESS = process.env.FACTORY_CONTRACT_ADDRESS;
 
+// Export admin wallet address for use in routes
+const ADMIN_WALLET_ADDRESS = adminWallet.address;
+
 /**
  * Get factory contract instance
  * @returns {ethers.Contract} Factory contract instance
@@ -87,6 +90,7 @@ function getElectionContractReadOnly(contractAddress) {
 module.exports = {
   provider,
   adminWallet,
+  ADMIN_WALLET_ADDRESS,
   getFactoryContract,
   getElectionContract,
   getElectionContractWithSigner,

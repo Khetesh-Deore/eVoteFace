@@ -18,12 +18,33 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validation
     if (form.password !== form.confirmPassword) {
-      toast.error("Passwords do not match"); return;
+      toast.error("Passwords do not match"); 
+      return;
     }
     if (form.password.length < 8) {
-      toast.error("Password must be at least 8 characters"); return;
+      toast.error("Password must be at least 8 characters"); 
+      return;
     }
+    if (form.contactNumber.length !== 10 || !/^\d{10}$/.test(form.contactNumber)) {
+      toast.error("Contact number must be 10 digits");
+      return;
+    }
+    if (form.aadharNumber.length !== 12 || !/^\d{12}$/.test(form.aadharNumber)) {
+      toast.error("Aadhar number must be 12 digits");
+      return;
+    }
+    if (form.pincode.length !== 6 || !/^\d{6}$/.test(form.pincode)) {
+      toast.error("Pincode must be 6 digits");
+      return;
+    }
+    if (Number(form.age) < 18) {
+      toast.error("You must be at least 18 years old to register");
+      return;
+    }
+    
     setLoading(true);
     try {
       const { confirmPassword, ...payload } = form;

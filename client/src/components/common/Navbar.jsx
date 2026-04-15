@@ -33,7 +33,7 @@ export default function Navbar() {
 
         {/* Desktop nav */}
         <div className="hidden sm:flex items-center gap-5 text-sm">
-          {navLink("/results", "Results")}
+          {navLink("/elections", "Elections")}
           {!user ? (
             <>
               {navLink("/login", "Login")}
@@ -45,17 +45,13 @@ export default function Navbar() {
           ) : isAdmin ? (
             <>
               {navLink("/admin/dashboard", "Dashboard")}
-              {navLink("/admin/voters", "Voters")}
-              {navLink("/admin/candidates", "Candidates")}
-              {navLink("/admin/face", "Faces")}
-              {navLink("/admin/election", "Election")}
-              {navLink("/admin/results", "Results")}
+              {navLink("/admin/elections", "Elections")}
               <button onClick={handleLogout} className="hover:text-accent transition-colors">Logout</button>
             </>
           ) : (
             <>
               {navLink("/dashboard", "My Dashboard")}
-              {navLink("/vote", "Vote")}
+              {navLink("/elections", "Elections")}
               <button onClick={handleLogout} className="hover:text-accent transition-colors">Logout</button>
             </>
           )}
@@ -75,7 +71,7 @@ export default function Navbar() {
       {/* Mobile menu */}
       {open && (
         <div className="sm:hidden bg-blue-900 border-t border-blue-700 px-4 py-3 space-y-3 text-sm">
-          {navLink("/results", "📊 Results")}
+          {navLink("/elections", "📊 Elections")}
           {!user ? (
             <>
               {navLink("/login", "🔑 Login")}
@@ -84,16 +80,13 @@ export default function Navbar() {
           ) : isAdmin ? (
             <>
               {navLink("/admin/dashboard", "🏠 Dashboard")}
-              {navLink("/admin/voters", "👥 Voters")}
-              {navLink("/admin/candidates", "🏛️ Candidates")}
-              {navLink("/admin/face", "📷 Face Registration")}
-              {navLink("/admin/election", "⚙️ Election Control")}
+              {navLink("/admin/elections", "🗳️ Elections")}
               <button onClick={handleLogout} className="block text-left hover:text-accent">🚪 Logout</button>
             </>
           ) : (
             <>
               {navLink("/dashboard", "🏠 My Dashboard")}
-              {navLink("/vote", "🗳️ Cast Vote")}
+              {navLink("/elections", "🗳️ Elections")}
               <button onClick={handleLogout} className="block text-left hover:text-accent">🚪 Logout</button>
             </>
           )}
