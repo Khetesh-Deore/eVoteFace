@@ -966,15 +966,3 @@ When admin clicks Approve in Election 1:
 
 
 ---
-
-## 17. What Happens When You Open the App
-
-When a voter opens http://localhost:3000, exact sequence:
-
-1. Browser loads React app (client/src/main.jsx)
-2. AuthProvider mounts, reads evf_token from localStorage
-3. If token exists: calls GET /api/auth/me to restore user session
-4. If token missing or expired: user stays logged out
-5. WalletProvider mounts, calls window.ethereum.eth_accounts to check MetaMask
-6. App.jsx renders the correct page based on URL
-7. ProtectedRoute/AdminRoute check auth state before rendering protected pages
