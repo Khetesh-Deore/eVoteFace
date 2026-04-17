@@ -1,354 +1,240 @@
-# eVoteFace V2 — Multi-Election Blockchain Voting System
+# eVoteFace V2 — Decentralized Voting System
 
-> Secure digital voting with Face Recognition + Blockchain + OTP  
-> Stack: MERN + Python (DeepFace) + Ethereum (Solidity)  
+> Secure digital voting with **Face Recognition + Blockchain + OTP**  
+> Stack: **MERN + Python (DeepFace) + Ethereum Sepolia (Solidity)**  
 > Multi-Election Architecture with Factory Pattern
 
 ---
 
-## 🎯 What's New in V2
+## What is eVoteFace?
 
-- **Multi-Election Support**: One platform, unlimited elections
-- **Factory Pattern**: Deploy new election contracts on-demand
-- **Per-Election Data**: Each voter can participate in multiple elections with different wallets
-- **DeepFace Integration**: Advanced face recognition with ArcFace model
-- **Cloudinary Storage**: Permanent face photo and party symbol storage
-- **Enhanced Admin Panel**: Complete election lifecycle management
-- **Improved Security**: Short-lived tokens, rate limiting, role-based access
+eVoteFace is a fully decentralized online voting system that replaces traditional EVM-based voting with a secure, transparent, and tamper-proof digital alternative. Every vote is permanently recorded on the Ethereum blockchain and protected by three independent authentication factors.
+
+### Core Security Properties
+
+| Property | How Achieved |
+|----------|-------------|
+| Immutability | Ethereum blockchain — votes cannot be altered |
+| Triple Authentication | MetaMask wallet + Face Recognition + Email OTP |
+| Transparency | Anyone can verify results on Etherscan |
+| Anonymity | Only vote hash on-chain, not linked to voter identity |
+| Correctness | Smart contract tallies automatically |
+| Multi-Election | Factory pattern — unlimited independent elections |
 
 ---
 
-## ✨ Features
+## Features
 
-### Security
-- **Three-Factor Authentication**: MetaMask wallet + Face Recognition + Email OTP
-- **Blockchain Immutability**: Every vote permanently recorded on Ethereum Sepolia
-- **AI Biometrics**: DeepFace with ArcFace model for face verification
-- **Public Verifiability**: Anyone can verify results on-chain
-- **Short-Lived Tokens**: Face verification (5min), Vote authorization (2min)
-
-### Multi-Election Architecture
-- **Factory Pattern**: ElectionFactory deploys individual Election contracts
-- **Independent Elections**: Each election has its own smart contract
-- **Per-Election Voter Data**: Wallet address, face photo, voting status per election
-- **Flexible Participation**: One user can vote in multiple elections
-
-### Admin Features
-- Create unlimited elections
-- Deploy smart contracts automatically
-- Add/remove candidates with party symbols
-- Approve voters for specific elections
-- Upload voter face photos to Cloudinary
-- Register voters on blockchain
-- Control election phases (Registration → Voting → Completed)
-- View live results with winner announcement
-
-### Voter Features
+### For Voters
 - Register once, participate in multiple elections
-- Dashboard showing all available elections
-- 5-step voting process with real-time feedback
-- View results with bar charts and rankings
+- 5-step voting with real-time feedback
+- Different MetaMask wallet per election
+- View live results and winner announcement
 - Transaction verification on Etherscan
 
----
-
-## 🏗️ Architecture
-
-```
-React (Client)
-    ↓
-Express (Server) ──→ MongoDB Atlas
-    ↓                    ↓
-    ├──→ Python Flask (DeepFace)
-    ├──→ Cloudinary (Face Photos)
-    ├──→ Nodemailer (OTP)
-    └──→ Ethereum Sepolia (Alchemy)
-            ↓
-        ElectionFactory
-            ↓
-        Election Contracts
-```
+### For Admins
+- Create unlimited elections (each deploys a smart contract)
+- Add candidates with party symbols (stored on Cloudinary)
+- Approve voters, upload face photos, register wallets on blockchain
+- Control election phases: Registration → Voting → Completed
+- View live results with voter turnout statistics
 
 ---
 
-## 🚀 Quick Start
+## Three-Factor Authentication
+
+```
+Step 1: MetaMask Wallet
+        Voter connects wallet → Contract checks if registered
+        ↓
+Step 2: Face Recognition (AI)
+        Webcam captures live face → Python DeepFace compares with stored photo
+        → Returns faceVerifiedToken (5 min expiry)
+        ↓
+Step 3: Email OTP
+        6-digit OTP sent to registered email → Voter enters code
+        → Returns voteAuthToken (2 min expiry)
+        ↓
+Step 4: Blockchain Vote
+        contract.castVote(candidateId) via MetaMask
+        → Transaction signed with private key
+        ↓
+Step 5: Record
+        POST /votes/record → Verify txHash on-chain → Mark voted in DB
+```
+
+---
+
+## Quick Start
 
 ### Prerequisites
 - Node.js v18+
-- Python 3.10+
+- Python 3.9+
 - MetaMask browser extension
-- MongoDB (local or Atlas)
+- MongoDB Atlas account
 - Alchemy account (Sepolia RPC)
 - Cloudinary account
-- Gmail account (for OTP)
+- Gmail account (App Password for OTP)
 
 ### Installation
 
-See [QUICK_START.md](./QUICK_START.md) for detailed setup instructions.
-
-**Quick Commands:**
 ```bash
-# Install dependencies
+# 1. Clone repository
+git clone <repo-url>
+cd eVoteFace
+
+# 2. Install server dependencies
 cd server && npm install
+
+# 3. Install client dependencies
 cd ../client && npm install
+
+# 4. Install Python dependencies
 cd ../python-service && pip install -r requirements.txt
 
-# Configure environment variables
-# Edit server/.env, client/.env, python-service/.env
+# 5. Configure environment variables
+# Edit server/.env (see Environment Variables section)
+# Edit client/.env
 
-# Seed admin account
-cd server && node scripts/seedAdmin.js
+# 6. Create admin account
+cd ../server && node scripts/seedAdmin.js
 
-# Start services (3 terminals)
+# 7. Start all services (3 terminals)
+# Terminal 1:
 cd python-service && python app.py
+
+# Terminal 2:
 cd server && npm run dev
+
+# Terminal 3:
 cd client && npm run dev
 ```
 
-Open: http://localhost:5173
+Open: **http://localhost:3000**
 
 ---
 
-## 📚 Documentation
+## Environment Variables
 
-- **[QUICK_START.md](./QUICK_START.md)** - Get started in minutes
-- **[SYSTEM_STATUS.md](./SYSTEM_STATUS.md)** - Complete system overview
-- **[DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md)** - Production deployment
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - System architecture
-- **[API.md](./API.md)** - API documentation
-- **[SESSION_SUMMARY.md](./SESSION_SUMMARY.md)** - Development summary
+### server/.env
+```env
+MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/evoteface
+JWT_SECRET=your_jwt_secret_key
+JWT_EXPIRES_IN=7d
+VOTE_AUTH_TOKEN_SECRET=your_vote_auth_secret
+VOTE_AUTH_TOKEN_EXPIRES_IN=2m
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your@gmail.com
+EMAIL_PASS=your_16_char_app_password
+EMAIL_FROM=eVoteFace <your@gmail.com>
+ALCHEMY_SEPOLIA_URL=https://eth-sepolia.g.alchemy.com/v2/your_key
+ADMIN_WALLET_PRIVATE_KEY=0x_your_wallet_private_key
+FACTORY_CONTRACT_ADDRESS=0x_deployed_factory_address
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+PYTHON_FACE_API_URL=http://localhost:8000
+PORT=5000
+NODE_ENV=development
+OTP_RATE_LIMIT_WINDOW_MS=600000
+OTP_RATE_LIMIT_MAX=3
+```
 
----
-
-## 🗳️ How It Works
-
-### Admin Workflow
-1. **Login** → Toggle to Admin Login at `/login`
-2. **Create Election** → Deploy smart contract via factory
-3. **Add Candidates** → Upload party symbols to Cloudinary
-4. **Manage Voters** → Approve, upload face photos, register on blockchain
-5. **Start Voting** → Change phase to "Voting"
-6. **Monitor Results** → View live vote counts
-7. **Close Election** → Change phase to "Completed"
-
-### Voter Workflow
-1. **Register** → Create account with personal details
-2. **Wait for Approval** → Admin approves for specific election
-3. **Login** → Access voter dashboard
-4. **Vote** → 5-step process:
-   - **Step 1**: Connect MetaMask wallet
-   - **Step 2**: Face verification via webcam
-   - **Step 3**: OTP verification via email
-   - **Step 4**: Select candidate and cast vote
-   - **Step 5**: View transaction confirmation
-5. **View Results** → See live results and winner
+### client/.env
+```env
+VITE_API_URL=http://localhost:5000/api
+```
 
 ---
 
-## 🔐 Security Features
-
-### Authentication
-- JWT tokens with 7-day expiry
-- Bcrypt password hashing (10 rounds)
-- Role-based access control (voter/admin/superadmin)
-
-### Voting Security
-- 3-factor authentication required
-- Face verification token: 5 minutes
-- Vote authorization token: 2 minutes
-- One vote per wallet per election
-- Blockchain immutability
-
-### Data Protection
-- Passwords never stored in plain text
-- Face photos stored securely on Cloudinary
-- No face encodings stored on disk
-- Rate limiting on OTP endpoints
-- CORS protection
-
----
-
-## 📊 Technology Stack
-
-### Backend
-- Node.js + Express.js
-- MongoDB + Mongoose
-- JWT for authentication
-- Ethers.js for blockchain
-- Cloudinary SDK
-- Nodemailer
-
-### Frontend
-- React 18
-- React Router v6
-- Axios
-- Ethers.js
-- React Toastify
-- React Webcam
-- Tailwind CSS
-
-### Blockchain
-- Solidity smart contracts
-- Hardhat
-- Sepolia testnet
-- Alchemy RPC
-
-### Python Service
-- Flask
-- DeepFace
-- TensorFlow
-- RetinaFace
-
----
-
-## 📡 API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - Register voter
-- `POST /api/auth/login` - Voter login
-- `POST /api/auth/admin/login` - Admin login
-- `GET /api/auth/me` - Get current user
-
-### Elections (Admin)
-- `POST /api/admin/elections` - Create election
-- `GET /api/admin/elections` - List all elections
-- `PATCH /api/admin/elections/:id/phase` - Change phase
-
-### Candidates (Admin)
-- `POST /api/admin/elections/:id/candidates` - Add candidate
-- `GET /api/admin/elections/:id/candidates` - List candidates
-- `DELETE /api/admin/elections/:id/candidates/:candidateId` - Remove
-
-### Voters (Admin)
-- `GET /api/admin/elections/:id/voters` - List voters
-- `POST /api/admin/elections/:id/voters/:userId/face` - Upload face
-- `POST /api/admin/elections/:id/voters/:userId/register-onchain` - Register
-
-### Voting (Voter)
-- `POST /api/face/verify` - Verify face
-- `POST /api/otp/send` - Send OTP
-- `POST /api/otp/verify` - Verify OTP
-- `POST /api/votes/record` - Record vote
-- `GET /api/votes/results/:electionId` - Get results
-
-See [API.md](./API.md) for complete documentation.
-
----
-
-## 🧪 Testing
-
-### Manual Testing Checklist
-- [ ] Admin can create election
-- [ ] Admin can add candidates
-- [ ] Admin can approve voters
-- [ ] Voter can complete face verification
-- [ ] Voter can receive OTP
-- [ ] Voter can cast vote
-- [ ] Results display correctly
-
-See [SYSTEM_STATUS.md](./SYSTEM_STATUS.md) for complete testing checklist.
-
----
-
-## 🚀 Deployment
-
-See [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md) for production deployment guide.
-
-**Quick Deploy:**
-1. Configure production environment variables
-2. Build client: `npm run build`
-3. Deploy smart contracts to mainnet
-4. Set up PM2 for process management
-5. Configure Nginx reverse proxy
-6. Set up SSL with Let's Encrypt
-7. Configure monitoring and backups
-
----
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**"No routes matched location /admin/login"**
-- Admin login is on the same page as voter login at `/login`
-- Use the toggle button to switch to Admin Login
-
-**Face verification fails**
-- Ensure Python service is running on port 8000
-- Check face photo was uploaded by admin
-- Ensure good lighting for webcam capture
-
-**OTP not received**
-- Check email configuration in server/.env
-- Verify EMAIL_PASS is an App Password
-- Check spam folder
-
-See [SYSTEM_STATUS.md](./SYSTEM_STATUS.md) for complete troubleshooting guide.
-
----
-
-## 📝 Project Structure
+## Project Structure
 
 ```
-evoteface/
-├── client/              # React frontend
+eVoteFace/
+├── blockchain/              # Hardhat smart contracts
+│   ├── contracts/
+│   │   ├── Election.sol     # Per-election contract
+│   │   └── ElectionFactory.sol  # Factory (deployed once)
+│   ├── scripts/
+│   │   ├── deployFactory.js
+│   │   └── extractABI.js
+│   └── hardhat.config.js
+├── server/                  # Express backend (Port 5000)
+│   ├── models/              # Mongoose schemas
+│   ├── routes/              # API route handlers
+│   ├── middleware/          # Auth, upload, rate limiting
+│   ├── utils/               # Blockchain, mailer, cloudinary
+│   └── server.js
+├── client/                  # React frontend (Port 3000)
 │   ├── src/
-│   │   ├── components/  # Reusable components
-│   │   ├── context/     # React contexts
-│   │   ├── pages/       # Page components
-│   │   └── utils/       # Utilities
-│   └── ...
-├── server/              # Express backend
-│   ├── config/          # Database config
-│   ├── middleware/      # Auth, upload, etc.
-│   ├── models/          # Mongoose models
-│   ├── routes/          # API routes
-│   ├── scripts/         # Utility scripts
-│   └── utils/           # Blockchain, email, etc.
-├── blockchain/          # Smart contracts
-│   ├── contracts/       # Solidity files
-│   ├── scripts/         # Deploy scripts
-│   └── test/            # Contract tests
-├── python-service/      # Face verification
-│   ├── app.py           # Flask API
+│   │   ├── pages/           # All page components
+│   │   ├── components/      # Reusable components
+│   │   ├── context/         # Auth, Election, Wallet contexts
+│   │   └── utils/           # API client, contract helpers
+│   └── vite.config.js
+├── python-service/          # DeepFace microservice (Port 8000)
+│   ├── app.py
 │   └── requirements.txt
-└── docs/                # Documentation
+├── docs/                    # Development documentation
+├── API.md                   # Complete API reference
+├── API.yaml                 # OpenAPI 3.0 specification
+├── ARCHITECTURE.md          # System architecture
+├── FRONTEND_SPEC.md         # Frontend specification
+└── HOW_TO_USE_AND_PRESENT.md  # Demo guide for teachers
 ```
 
 ---
 
-## 🎓 Academic Context
+## Deployed Contracts (Sepolia Testnet)
 
-This project demonstrates:
-- Blockchain-based voting systems
-- Multi-factor authentication
-- Biometric verification
-- Smart contract design patterns
-- Full-stack web development
-- Cloud service integration
+| Contract | Address |
+|----------|---------|
+| ElectionFactory | `0x0493732CE8A223fedbC7FEE3f5780D7c46385eb5` |
+| Admin Wallet | `0x5b979D566867F2f5abaEE5d51292E1bd1740f103` |
 
----
-
-## 📄 License
-
-This project is for educational purposes.
+- Factory: https://sepolia.etherscan.io/address/0x0493732CE8A223fedbC7FEE3f5780D7c46385eb5
+- Get free Sepolia ETH: https://sepoliafaucet.com
 
 ---
 
-## 🤝 Contributing
+## Technology Stack
 
-This is an academic project. For issues or suggestions, please open an issue.
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 18, Vite, Tailwind CSS, ethers.js v6 |
+| Backend | Node.js, Express, Mongoose, JWT, Nodemailer |
+| Blockchain | Solidity 0.8.20, Hardhat, Ethereum Sepolia |
+| AI/Face | Python, DeepFace, TensorFlow |
+| Database | MongoDB Atlas |
+| Storage | Cloudinary (images) |
+| RPC | Alchemy (Sepolia) |
 
 ---
 
-## 📞 Support
+## Documentation
 
-- Check [SYSTEM_STATUS.md](./SYSTEM_STATUS.md) for system overview
-- Check [QUICK_START.md](./QUICK_START.md) for setup help
-- Check troubleshooting section for common issues
+| File | Description |
+|------|-------------|
+| `API.md` | Complete REST API reference with examples |
+| `API.yaml` | OpenAPI 3.0 spec (for Postman) |
+| `ARCHITECTURE.md` | System architecture, DB schema, data flow diagrams |
+| `FRONTEND_SPEC.md` | Every page, component, and user interaction |
+| `HOW_TO_USE_AND_PRESENT.md` | Step-by-step demo guide for teachers |
 
 ---
 
-**Status: Production Ready** ✅  
-**Version: 2.0**  
-**Last Updated: April 14, 2026**
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| Face verification timeout | Ensure Python service running on port 8000 |
+| MetaMask wrong network | Switch to Sepolia testnet in MetaMask |
+| Transaction failing | Voter wallet needs Sepolia ETH (get from faucet) |
+| OTP not received | Check spam; verify Gmail App Password in .env |
+| "Wrong phase" error | Election must be in Registration phase to register voters |
+| Server crash on start | Check MongoDB URI and all .env values |
+
+---
+
+**Version:** 2.0 | **Network:** Ethereum Sepolia | **Status:** Production Ready

@@ -869,3 +869,114 @@ All API calls should:
 7. **Vote auth token** — expires in 2 minutes after OTP verification
 8. **Sepolia ETH** — voters need Sepolia ETH for gas fees when voting
 9. **Admin wallet** — `0x5b979D566867F2f5abaEE5d51292E1bd1740f103` cannot be used as voter wallet
+
+---
+
+## Validation Rules (Client-Side)
+
+### Register Form
+| Field | Rule |
+|-------|------|
+| Full Name | Required, non-empty |
+| Age | Required, min 18 |
+| Gender | Required, one of Male/Female/Other |
+| Contact | Required, exactly 10 digits |
+| Email | Required, valid email format |
+| Voter ID | Required, non-empty |
+| Aadhar | Required, exactly 12 digits |
+| Address | Required |
+| State | Required, from dropdown |
+| City | Required |
+| Pincode | Required, exactly 6 digits |
+| Password | Required, min 8 characters |
+| Confirm Password | Must match Password |
+
+### Wallet Address Input
+| Rule | Message |
+|------|---------|
+| Required | "Please enter your wallet address" |
+| Format: `/^0x[a-fA-F0-9]{40}$/` | "Invalid wallet address format" |
+| Not admin wallet | "Admin wallet cannot be used as voter wallet" |
+
+---
+
+## Loading States
+
+Every async operation shows a loading state:
+
+| Action | Loading Text |
+|--------|-------------|
+| Login | "Logging in..." |
+| Register | "Submitting..." |
+| Create Election | "Deploying contract..." |
+| Add Candidate | "Adding..." |
+| Approve Voter | "Approving..." |
+| Register On-Chain | "Registering..." |
+| Upload Face | "Uploading..." |
+| Face Verification | "Verifying..." |
+| Send OTP | "Sending..." |
+| Verify OTP | "Verifying..." |
+| Cast Vote | "Casting Vote..." |
+
+---
+
+## Toast Notification Messages
+
+### Success Toasts (green)
+- "Welcome back!" — on login
+- "Registration submitted! Please wait for admin approval." — on register
+- "Election created and contract deployed!" — on create election
+- "Candidate added successfully" — on add candidate
+- "Candidate removed successfully" — on remove candidate
+- "Voter approved successfully" — on approve voter
+- "Face photo uploaded successfully" — on face upload
+- "Voter registered on blockchain" — on register on-chain
+- "Registration request sent! Waiting for admin approval." — on request registration
+- "Face verified successfully!" — on face verify
+- "OTP sent to [masked email]" — on send OTP
+- "OTP verified! You can now cast your vote." — on verify OTP
+- "Vote cast successfully!" — on vote
+- "Wallet address copied!" — on copy wallet
+
+### Error Toasts (red)
+- "Invalid credentials" — on login fail
+- "Email already registered" — on register duplicate
+- "Failed to load elections" — on fetch fail
+- "Face verification is taking too long. Ensure Python service is running." — on timeout
+- "Face verification failed" — on no match
+- "Invalid or expired OTP" — on wrong OTP
+- "Transaction rejected by user" — on MetaMask cancel
+- "You have already voted in this election" — on double vote attempt
+- "Cannot register voters during [phase] phase." — on wrong phase
+- "Admin wallet cannot be used as voter wallet." — on admin wallet
+
+---
+
+## Responsive Breakpoints
+
+| Breakpoint | Layout Changes |
+|-----------|---------------|
+| Mobile (<640px) | Single column, hamburger nav, stacked buttons |
+| Tablet (640-1024px) | 2-column grids, expanded nav |
+| Desktop (>1024px) | 3-column grids, full nav, side-by-side layouts |
+
+---
+
+## Color Usage Guide
+
+| Element | Color |
+|---------|-------|
+| Primary buttons | `bg-blue-600` hover `bg-blue-700` |
+| Success/Vote buttons | `bg-green-600` hover `bg-green-700` |
+| Danger/Remove buttons | `bg-red-600` or `text-red-600` |
+| Admin accent | `bg-gray-600` |
+| Phase: registration | `bg-blue-100 text-blue-800` |
+| Phase: voting | `bg-green-100 text-green-800` |
+| Phase: completed | `bg-gray-100 text-gray-800` |
+| Status: approved | `bg-green-100 text-green-800` |
+| Status: pending | `bg-yellow-100 text-yellow-800` |
+| Status: voted | `bg-green-100 text-green-800` |
+| Navbar/Footer bg | `bg-primary` (#1a1a2e) |
+| Page bg | `bg-gray-50` |
+| Card bg | `bg-white` with `shadow` |
+| Accent (logo, CTA) | `text-accent` / `bg-accent` (#e94560) |
