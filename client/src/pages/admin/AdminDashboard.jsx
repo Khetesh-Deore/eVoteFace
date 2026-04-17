@@ -27,7 +27,6 @@ const AdminDashboard = () => {
       const response = await api.get('/admin/elections');
       const elections = response.data;
 
-      // Calculate stats
       const totalElections = elections.length;
       const activeElections = elections.filter(
         e => e.phase === 'registration' || e.phase === 'voting'
@@ -55,7 +54,6 @@ const AdminDashboard = () => {
         totalVotesCast
       });
 
-      // Get 5 most recent elections
       setRecentElections(elections.slice(0, 5));
     } catch (error) {
       console.error('Fetch dashboard data error:', error);
@@ -67,13 +65,13 @@ const AdminDashboard = () => {
   const getPhaseColor = (phase) => {
     switch (phase) {
       case 'registration':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 text-blue-700 border border-blue-200';
       case 'voting':
-        return 'bg-green-100 text-green-800';
+        return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
       case 'completed':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-slate-100 text-slate-700 border border-slate-200';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-slate-100 text-slate-700 border border-slate-200';
     }
   };
 
@@ -82,162 +80,181 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="text-gray-600 mt-2">Welcome back, {user?.fullName}</p>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
+    <div className="min-h-screen bg-slate-50 py-10 px-6">
+      <div className="max-w-screen-2xl mx-auto">
+        
+        {/* Header */}
+        <div className="mb-12">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Elections</p>
-              <p className="text-3xl font-bold text-gray-900">{stats.totalElections}</p>
+              <h1 className="text-4xl font-semibold tracking-tight text-slate-900" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                Admin Dashboard
+              </h1>
+              <p className="text-slate-600 mt-2 text-lg">
+                Welcome back, <span className="font-medium text-slate-800">{user?.fullName || 'Admin'}</span>
+              </p>
             </div>
-            <div className="bg-blue-100 rounded-full p-3">
-              <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
+            
+            <div className="hidden md:flex items-center gap-3 bg-white px-6 py-3 rounded-3xl border border-slate-100">
+              <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-slate-600">LIVE SYSTEM</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 card-hover">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-500">Total Elections</p>
+                <p className="text-5xl font-semibold text-slate-900 mt-3">{stats.totalElections}</p>
+              </div>
+              <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center">
+                <i className="fa-solid fa-chart-bar text-3xl text-blue-600"></i>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 card-hover">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-500">Active Elections</p>
+                <p className="text-5xl font-semibold text-emerald-600 mt-3">{stats.activeElections}</p>
+              </div>
+              <div className="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center">
+                <i className="fa-solid fa-circle-play text-3xl text-emerald-600"></i>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 card-hover">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-500">Total Voters</p>
+                <p className="text-5xl font-semibold text-slate-900 mt-3">{stats.totalVoters.toLocaleString()}</p>
+              </div>
+              <div className="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center">
+                <i className="fa-solid fa-users text-3xl text-purple-600"></i>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 card-hover">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-500">Total Candidates</p>
+                <p className="text-5xl font-semibold text-slate-900 mt-3">{stats.totalCandidates}</p>
+              </div>
+              <div className="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center">
+                <i className="fa-solid fa-user-tie text-3xl text-amber-600"></i>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 card-hover">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-500">Votes Cast</p>
+                <p className="text-5xl font-semibold text-slate-900 mt-3">{stats.totalVotesCast.toLocaleString()}</p>
+              </div>
+              <div className="w-14 h-14 bg-indigo-100 rounded-2xl flex items-center justify-center">
+                <i className="fa-solid fa-check-to-slot text-3xl text-indigo-600"></i>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 card-hover">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-500">Completed Elections</p>
+                <p className="text-5xl font-semibold text-slate-900 mt-3">{stats.completedElections}</p>
+              </div>
+              <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center">
+                <i className="fa-solid fa-flag-checkered text-3xl text-slate-600"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid md:grid-cols-2 gap-6 mb-12">
+          <Link
+            to="/admin/elections/new"
+            className="group bg-gradient-to-br from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-3xl p-8 flex items-center justify-between transition-all duration-300 shadow-lg"
+          >
             <div>
-              <p className="text-sm text-gray-600">Active Elections</p>
-              <p className="text-3xl font-bold text-green-600">{stats.activeElections}</p>
+              <h3 className="text-2xl font-semibold">Create New Election</h3>
+              <p className="text-emerald-100 mt-2">Set up a new voting event</p>
             </div>
-            <div className="bg-green-100 rounded-full p-3">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+            <div className="text-5xl group-hover:rotate-12 transition-transform">
+              ➕
             </div>
-          </div>
-        </div>
+          </Link>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
+          <Link
+            to="/admin/elections"
+            className="group bg-white border border-slate-200 hover:border-slate-300 rounded-3xl p-8 flex items-center justify-between transition-all duration-300"
+          >
             <div>
-              <p className="text-sm text-gray-600">Total Voters</p>
-              <p className="text-3xl font-bold text-gray-900">{stats.totalVoters}</p>
+              <h3 className="text-2xl font-semibold text-slate-900">Manage All Elections</h3>
+              <p className="text-slate-600 mt-2">View, edit &amp; monitor ongoing elections</p>
             </div>
-            <div className="bg-purple-100 rounded-full p-3">
-              <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
+            <div className="text-5xl text-slate-300 group-hover:text-slate-400 transition-colors">
+              📋
             </div>
-          </div>
+          </Link>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Total Candidates</p>
-              <p className="text-3xl font-bold text-gray-900">{stats.totalCandidates}</p>
-            </div>
-            <div className="bg-yellow-100 rounded-full p-3">
-              <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </div>
+        {/* Recent Elections */}
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+          <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+            <h2 className="text-2xl font-semibold text-slate-900">Recent Elections</h2>
+            <Link 
+              to="/admin/elections" 
+              className="text-emerald-600 hover:text-emerald-700 font-medium flex items-center gap-2"
+            >
+              View All <span>→</span>
+            </Link>
           </div>
-        </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Votes Cast</p>
-              <p className="text-3xl font-bold text-gray-900">{stats.totalVotesCast}</p>
-            </div>
-            <div className="bg-indigo-100 rounded-full p-3">
-              <svg className="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Completed</p>
-              <p className="text-3xl font-bold text-gray-900">{stats.completedElections}</p>
-            </div>
-            <div className="bg-gray-100 rounded-full p-3">
-              <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <Link
-          to="/admin/elections/new"
-          className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow p-6 flex items-center justify-between transition"
-        >
-          <div>
-            <h3 className="text-xl font-semibold">Create New Election</h3>
-            <p className="text-blue-100 mt-1">Set up a new voting election</p>
-          </div>
-          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-        </Link>
-
-        <Link
-          to="/admin/elections"
-          className="bg-green-600 hover:bg-green-700 text-white rounded-lg shadow p-6 flex items-center justify-between transition"
-        >
-          <div>
-            <h3 className="text-xl font-semibold">Manage Elections</h3>
-            <p className="text-green-100 mt-1">View and manage all elections</p>
-          </div>
-          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
-        </Link>
-      </div>
-
-      {/* Recent Elections */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Recent Elections</h2>
-        </div>
-        <div className="divide-y divide-gray-200">
-          {recentElections.length === 0 ? (
-            <div className="px-6 py-8 text-center text-gray-500">
-              No elections created yet
-            </div>
-          ) : (
-            recentElections.map((election) => (
-              <Link
-                key={election._id}
-                to={`/admin/elections/${election._id}`}
-                className="px-6 py-4 hover:bg-gray-50 flex items-center justify-between transition"
-              >
-                <div className="flex-1">
-                  <h3 className="text-lg font-medium text-gray-900">{election.title}</h3>
-                  <p className="text-sm text-gray-600 mt-1">{election.description}</p>
-                  <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                    <span>{election.stats?.voterCount || 0} voters</span>
-                    <span>{election.stats?.candidateCount || 0} candidates</span>
-                    <span>{election.stats?.votedCount || 0} votes cast</span>
+          <div className="divide-y divide-slate-100">
+            {recentElections.length === 0 ? (
+              <div className="px-8 py-16 text-center">
+                <div className="text-6xl mb-4">📭</div>
+                <p className="text-slate-500">No elections created yet</p>
+              </div>
+            ) : (
+              recentElections.map((election) => (
+                <Link
+                  key={election._id}
+                  to={`/admin/elections/${election._id}`}
+                  className="px-8 py-7 hover:bg-slate-50 flex items-center justify-between group transition-all"
+                >
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold text-slate-900 group-hover:text-emerald-600 transition-colors">
+                      {election.title}
+                    </h3>
+                    <p className="text-slate-600 mt-1 line-clamp-1">{election.description}</p>
+                    
+                    <div className="flex items-center gap-6 mt-4 text-sm text-slate-500">
+                      <span>{election.stats?.voterCount || 0} voters</span>
+                      <span>{election.stats?.candidateCount || 0} candidates</span>
+                      <span className="font-medium text-emerald-600">
+                        {election.stats?.votedCount || 0} votes cast
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <div className="ml-4">
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPhaseColor(election.phase)}`}>
-                    {election.phase}
-                  </span>
-                </div>
-              </Link>
-            ))
-          )}
+
+                  <div>
+                    <span className={`px-5 py-2 text-sm font-medium rounded-3xl ${getPhaseColor(election.phase)}`}>
+                      {election.phase.charAt(0).toUpperCase() + election.phase.slice(1)}
+                    </span>
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>

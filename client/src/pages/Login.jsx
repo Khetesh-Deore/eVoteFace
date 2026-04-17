@@ -32,28 +32,31 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-muted flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-lg">
+        
         {/* Header */}
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-primary rounded-full mb-3">
-            <span className="text-white text-2xl">{isAdmin ? '👨‍💼' : '🗳️'}</span>
+        <div className="text-center mb-10">
+          <div className="flex justify-center mb-6">
+            <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-3xl flex items-center justify-center shadow-xl">
+              <i className="fa-solid fa-fingerprint text-white text-4xl"></i>
+            </div>
           </div>
-          <h1 className="text-2xl font-bold text-primary">
-            {isAdmin ? 'Admin Login' : 'Voter Login'}
+          <h1 className="text-4xl font-semibold tracking-tight text-slate-900" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+            {isAdmin ? 'Admin Portal' : 'Voter Login'}
           </h1>
-          <p className="text-gray-500 text-sm mt-1">eVoteFace — Secure Digital Voting</p>
+          <p className="text-slate-600 mt-2">Secure access to eVoteface</p>
         </div>
 
-        {/* Login Type Toggle */}
-        <div className="flex gap-2 mb-6">
+        {/* Toggle between Voter & Admin */}
+        <div className="flex bg-white rounded-3xl p-1 shadow-sm border border-slate-100 mb-8">
           <button
             type="button"
             onClick={() => setIsAdmin(false)}
-            className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${
-              !isAdmin
-                ? 'bg-primary text-white'
-                : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'
+            className={`flex-1 py-3.5 text-sm font-semibold rounded-3xl transition-all ${
+              !isAdmin 
+                ? 'bg-emerald-600 text-white shadow-sm' 
+                : 'text-slate-600 hover:bg-slate-50'
             }`}
           >
             Voter Login
@@ -61,87 +64,109 @@ export default function Login() {
           <button
             type="button"
             onClick={() => setIsAdmin(true)}
-            className={`flex-1 py-2 px-4 rounded-lg font-medium transition ${
-              isAdmin
-                ? 'bg-primary text-white'
-                : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'
+            className={`flex-1 py-3.5 text-sm font-semibold rounded-3xl transition-all ${
+              isAdmin 
+                ? 'bg-emerald-600 text-white shadow-sm' 
+                : 'text-slate-600 hover:bg-slate-50'
             }`}
           >
             Admin Login
           </button>
         </div>
 
-        <div className="card">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {isAdmin ? (
-              <div>
-                <label className="label">Admin Email</label>
-                <input
-                  name="email" 
-                  type="email"
-                  value={form.email} 
-                  onChange={set}
-                  required 
-                  className="input" 
-                  placeholder="Enter your admin email"
-                  autoComplete="username"
-                />
-              </div>
-            ) : (
-              <div>
-                <label className="label">Voter ID Number</label>
-                <input
-                  name="voterID" 
-                  value={form.voterID} 
-                  onChange={set}
-                  required 
-                  className="input" 
-                  placeholder="Enter your Voter ID"
-                  autoComplete="username"
-                />
-              </div>
-            )}
-            
-            <div>
-              <label className="label">Password</label>
-              <input
-                name="password" 
-                type="password" 
-                value={form.password} 
-                onChange={set}
-                required 
-                className="input" 
-                placeholder="Enter your password"
-                autoComplete="current-password"
-              />
-            </div>
-            
-            <button type="submit" disabled={loading} className="btn-primary w-full">
-              {loading ? "Logging in..." : "Login"}
-            </button>
-          </form>
+        <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+          <div className="p-10">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              
+              {isAdmin ? (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Admin Email Address</label>
+                  <input
+                    name="email"
+                    type="email"
+                    value={form.email}
+                    onChange={set}
+                    required
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500 placeholder:text-slate-400 text-slate-900"
+                    placeholder="admin@evoteface.gov.in"
+                    autoComplete="username"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Voter ID Number</label>
+                  <input
+                    name="voterID"
+                    value={form.voterID}
+                    onChange={set}
+                    required
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500 placeholder:text-slate-400 text-slate-900"
+                    placeholder="Enter your Voter ID"
+                    autoComplete="username"
+                  />
+                </div>
+              )}
 
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Password</label>
+                <input
+                  name="password"
+                  type="password"
+                  value={form.password}
+                  onChange={set}
+                  required
+                  className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500 placeholder:text-slate-400 text-slate-900"
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
+                />
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={loading}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold py-4 rounded-3xl text-lg transition-all active:scale-[0.985]"
+              >
+                {loading ? "Verifying Credentials..." : "Login Securely"}
+              </button>
+            </form>
+          </div>
+
+          {/* Footer Links */}
           {!isAdmin && (
-            <div className="mt-4 pt-4 border-t border-gray-100 text-center">
-              <p className="text-sm text-gray-500">
-                New voter?{" "}
-                <Link to="/register" className="text-primary font-medium hover:underline">
-                  Register here
+            <div className="border-t border-slate-100 px-10 py-6 bg-slate-50 text-center">
+              <p className="text-sm text-slate-600">
+                New to eVoteface?{" "}
+                <Link to="/register" className="text-emerald-600 font-semibold hover:underline">
+                  Register as a Voter
                 </Link>
               </p>
             </div>
           )}
         </div>
 
-        {/* Info box */}
-        <div className="mt-4 bg-blue-50 border border-blue-200 rounded p-3 text-xs text-blue-700">
-          <p className="font-medium mb-1">🔒 {isAdmin ? 'Admin Access' : 'Three-Factor Security'}</p>
-          <p>
+        {/* Security Info */}
+        <div className="mt-8 bg-white border border-slate-100 rounded-3xl p-6 text-sm">
+          <div className="flex items-center gap-3 mb-3">
+            <i className="fa-solid fa-shield-halved text-emerald-500 text-xl"></i>
+            <span className="font-semibold text-slate-800">
+              {isAdmin ? "Administrator Access" : "Three-Factor Security"}
+            </span>
+          </div>
+          <p className="text-slate-600 leading-relaxed text-[13px]">
             {isAdmin 
-              ? 'Manage elections, candidates, and voters with full administrative control.'
-              : 'Your vote is protected by MetaMask wallet + Face Recognition + OTP verification.'
+              ? "Full control over elections, candidates, and voter approvals. All actions are logged for audit."
+              : "Your account is protected by Voter ID + Password + upcoming Face Recognition & OTP verification."
             }
           </p>
+        </div>
+
+        {/* Trust Bar */}
+        <div className="text-center text-xs text-slate-500 mt-10 flex items-center justify-center gap-6">
+          <span>🔒 End-to-End Encrypted</span>
+          <span>•</span>
+          <span>🇮🇳 Government Compliant</span>
+          <span>•</span>
+          <span>✅ Secure Login</span>
         </div>
       </div>
     </div>

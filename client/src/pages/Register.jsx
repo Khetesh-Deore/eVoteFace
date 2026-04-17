@@ -19,7 +19,6 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validation
     if (form.password !== form.confirmPassword) {
       toast.error("Passwords do not match"); 
       return;
@@ -59,128 +58,260 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-muted py-8 px-4">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-slate-50 py-12 px-4">
+      <div className="max-w-3xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-primary rounded-full mb-3">
-            <span className="text-white text-2xl">🗳️</span>
+        <div className="text-center mb-10">
+          <div className="flex justify-center mb-6">
+            <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-3xl flex items-center justify-center shadow-lg">
+              <i className="fa-solid fa-fingerprint text-white text-4xl"></i>
+            </div>
           </div>
-          <h1 className="text-2xl font-bold text-primary">Voter Registration</h1>
-          <p className="text-gray-500 text-sm mt-1">eVoteFace — Secure Digital Voting Platform</p>
+          <h1 className="text-4xl font-semibold tracking-tight text-slate-900" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+            Voter Registration
+          </h1>
+          <p className="text-slate-600 mt-2">Join India's most secure digital voting platform</p>
+          <div className="inline-flex items-center gap-2 mt-4 bg-emerald-100 text-emerald-700 px-4 py-1 rounded-3xl text-sm font-medium">
+            <i className="fa-solid fa-shield-halved"></i>
+            Aadhaar + Face + Blockchain Verified
+          </div>
         </div>
 
-        <div className="card">
-          <div className="bg-blue-50 border border-blue-200 rounded p-3 mb-6 text-sm text-blue-800">
-            ℹ️ After registration, your account will be reviewed and approved by the Election Administrator.
+        <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+          {/* Info Banner */}
+          <div className="bg-emerald-50 border-b border-emerald-100 px-8 py-5 text-sm text-emerald-800 flex items-start gap-3">
+            <i className="fa-solid fa-circle-info mt-0.5 text-lg"></i>
+            <div>
+              Your registration will be reviewed and approved by the Election Administrator. 
+              Once approved, you can complete face verification and start voting.
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Personal Info */}
+          <form onSubmit={handleSubmit} className="p-8 space-y-10">
+            
+            {/* Personal Information */}
             <div>
-              <h2 className="text-sm font-semibold text-primary uppercase tracking-wide border-b border-gray-200 pb-2 mb-4">
-                Personal Information
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2">
-                  <label className="label">Full Name *</label>
-                  <input name="fullName" value={form.fullName} onChange={set} required className="input" placeholder="As per government ID" />
+              <h2 className="uppercase text-xs font-semibold tracking-widest text-slate-500 mb-5">Personal Information</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Full Name (as per Aadhaar) *</label>
+                  <input 
+                    name="fullName" 
+                    value={form.fullName} 
+                    onChange={set} 
+                    required 
+                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500 text-slate-900 placeholder:text-slate-400" 
+                    placeholder="Enter your full name" 
+                  />
                 </div>
+
                 <div>
-                  <label className="label">Age *</label>
-                  <input name="age" type="number" min="18" max="120" value={form.age} onChange={set} required className="input" placeholder="Must be 18+" />
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Age *</label>
+                  <input 
+                    name="age" 
+                    type="number" 
+                    min="18" 
+                    max="120" 
+                    value={form.age} 
+                    onChange={set} 
+                    required 
+                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500 text-slate-900" 
+                    placeholder="18+" 
+                  />
                 </div>
+
                 <div>
-                  <label className="label">Gender *</label>
-                  <select name="gender" value={form.gender} onChange={set} required className="input">
-                    <option value="">Select gender</option>
-                    <option>Male</option>
-                    <option>Female</option>
-                    <option>Other</option>
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Gender *</label>
+                  <select 
+                    name="gender" 
+                    value={form.gender} 
+                    onChange={set} 
+                    required 
+                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500 text-slate-900"
+                  >
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
+
                 <div>
-                  <label className="label">Contact Number *</label>
-                  <input name="contactNumber" value={form.contactNumber} onChange={set} required className="input" placeholder="10-digit mobile number" maxLength={10} />
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Contact Number *</label>
+                  <input 
+                    name="contactNumber" 
+                    value={form.contactNumber} 
+                    onChange={set} 
+                    required 
+                    maxLength={10}
+                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500 text-slate-900" 
+                    placeholder="10-digit mobile number" 
+                  />
                 </div>
+
                 <div>
-                  <label className="label">Email Address *</label>
-                  <input name="email" type="email" value={form.email} onChange={set} required className="input" placeholder="OTP will be sent here" />
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Email Address *</label>
+                  <input 
+                    name="email" 
+                    type="email" 
+                    value={form.email} 
+                    onChange={set} 
+                    required 
+                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500 text-slate-900" 
+                    placeholder="you@example.com" 
+                  />
                 </div>
               </div>
             </div>
 
-            {/* Identity */}
+            {/* Identity Documents */}
             <div>
-              <h2 className="text-sm font-semibold text-primary uppercase tracking-wide border-b border-gray-200 pb-2 mb-4">
-                Identity Documents
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <h2 className="uppercase text-xs font-semibold tracking-widest text-slate-500 mb-5">Identity Documents</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="label">Voter ID Number *</label>
-                  <input name="voterID" value={form.voterID} onChange={set} required className="input" placeholder="e.g. ABC1234567" />
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Voter ID Number *</label>
+                  <input 
+                    name="voterID" 
+                    value={form.voterID} 
+                    onChange={set} 
+                    required 
+                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500 text-slate-900" 
+                    placeholder="e.g. ABC1234567" 
+                  />
                 </div>
                 <div>
-                  <label className="label">Aadhar Number *</label>
-                  <input name="aadharNumber" value={form.aadharNumber} onChange={set} required className="input" placeholder="12-digit Aadhar" maxLength={12} />
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Aadhaar Number *</label>
+                  <input 
+                    name="aadharNumber" 
+                    value={form.aadharNumber} 
+                    onChange={set} 
+                    required 
+                    maxLength={12}
+                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500 text-slate-900" 
+                    placeholder="12-digit Aadhaar number" 
+                  />
                 </div>
               </div>
             </div>
 
             {/* Address */}
             <div>
-              <h2 className="text-sm font-semibold text-primary uppercase tracking-wide border-b border-gray-200 pb-2 mb-4">
-                Address
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2">
-                  <label className="label">Full Address *</label>
-                  <input name="address" value={form.address} onChange={set} required className="input" placeholder="House/Flat No., Street, Area" />
+              <h2 className="uppercase text-xs font-semibold tracking-widest text-slate-500 mb-5">Address Details</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Full Residential Address *</label>
+                  <input 
+                    name="address" 
+                    value={form.address} 
+                    onChange={set} 
+                    required 
+                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500 text-slate-900" 
+                    placeholder="House No., Street, Locality" 
+                  />
                 </div>
+
                 <div>
-                  <label className="label">State *</label>
-                  <select name="state" value={form.state} onChange={set} required className="input">
-                    <option value="">Select state</option>
-                    {STATES.map(s => <option key={s}>{s}</option>)}
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">State *</label>
+                  <select 
+                    name="state" 
+                    value={form.state} 
+                    onChange={set} 
+                    required 
+                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500 text-slate-900"
+                  >
+                    <option value="">Select your state</option>
+                    {STATES.map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
                   </select>
                 </div>
+
                 <div>
-                  <label className="label">City *</label>
-                  <input name="city" value={form.city} onChange={set} required className="input" placeholder="City / District" />
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">City / District *</label>
+                  <input 
+                    name="city" 
+                    value={form.city} 
+                    onChange={set} 
+                    required 
+                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500 text-slate-900" 
+                    placeholder="City or District" 
+                  />
                 </div>
+
                 <div>
-                  <label className="label">Pincode *</label>
-                  <input name="pincode" value={form.pincode} onChange={set} required className="input" placeholder="6-digit pincode" maxLength={6} />
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Pincode *</label>
+                  <input 
+                    name="pincode" 
+                    value={form.pincode} 
+                    onChange={set} 
+                    required 
+                    maxLength={6}
+                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500 text-slate-900" 
+                    placeholder="6-digit PIN code" 
+                  />
                 </div>
               </div>
             </div>
 
-            {/* Password */}
+            {/* Password Section */}
             <div>
-              <h2 className="text-sm font-semibold text-primary uppercase tracking-wide border-b border-gray-200 pb-2 mb-4">
-                Set Password
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <h2 className="uppercase text-xs font-semibold tracking-widest text-slate-500 mb-5">Create Secure Password</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="label">Password *</label>
-                  <input name="password" type="password" value={form.password} onChange={set} required className="input" placeholder="Min 8 characters" />
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Password *</label>
+                  <input 
+                    name="password" 
+                    type="password" 
+                    value={form.password} 
+                    onChange={set} 
+                    required 
+                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500 text-slate-900" 
+                    placeholder="Minimum 8 characters" 
+                  />
                 </div>
                 <div>
-                  <label className="label">Confirm Password *</label>
-                  <input name="confirmPassword" type="password" value={form.confirmPassword} onChange={set} required className="input" placeholder="Re-enter password" />
+                  <label className="block text-sm font-medium text-slate-700 mb-1.5">Confirm Password *</label>
+                  <input 
+                    name="confirmPassword" 
+                    type="password" 
+                    value={form.confirmPassword} 
+                    onChange={set} 
+                    required 
+                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500 text-slate-900" 
+                    placeholder="Re-enter password" 
+                  />
                 </div>
               </div>
             </div>
 
-            <button type="submit" disabled={loading} className="btn-primary w-full text-center">
-              {loading ? "Submitting..." : "Submit Registration"}
+            {/* Submit Button */}
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-semibold py-4 rounded-3xl text-lg transition-all active:scale-[0.985]"
+            >
+              {loading ? "Submitting Registration..." : "Submit Voter Registration"}
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-500 mt-4">
-            Already registered?{" "}
-            <Link to="/login" className="text-primary font-medium hover:underline">Login here</Link>
-          </p>
+          <div className="px-8 py-6 border-t bg-slate-50 text-center text-sm text-slate-600">
+            Already have an account?{" "}
+            <Link to="/login" className="text-emerald-600 font-medium hover:underline">
+              Login here
+            </Link>
+          </div>
+        </div>
+
+        {/* Trust Footer */}
+        <div className="text-center text-xs text-slate-500 mt-8 flex flex-col items-center gap-y-1">
+          <div className="flex items-center gap-4">
+            <span>🔒 Secure</span>
+            <span>•</span>
+            <span>🛡️ Encrypted</span>
+            <span>•</span>
+            <span>✅ Verified</span>
+          </div>
+          <p>Data protected under Representation of the People Act, 1951</p>
         </div>
       </div>
     </div>

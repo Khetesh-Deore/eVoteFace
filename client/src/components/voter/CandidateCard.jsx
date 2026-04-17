@@ -5,42 +5,72 @@
  * isWinner: highlight as winner
  */
 export default function CandidateCard({
-  candidate, onVote, showVoteButton = false,
-  showVoteCount = false, isWinner = false, disabled = false, voting = false,
+  candidate,
+  onVote,
+  showVoteButton = false,
+  showVoteCount = false,
+  isWinner = false,
+  disabled = false,
+  voting = false,
 }) {
-  const { id, name, partyName, partySymbol, voteCount } = candidate;
+  const { id, name, partyName, partySymbol, voteCount = 0 } = candidate;
 
   return (
-    <div className={`border-2 rounded-lg p-4 flex items-center justify-between transition-all
-      ${isWinner ? "border-accent bg-orange-50" : "border-gray-200 hover:border-primary hover:bg-blue-50"}
-      ${disabled ? "opacity-60" : ""}`}>
-      <div className="flex items-center gap-3">
+    <div className={`border-2 rounded-3xl p-6 flex items-center justify-between transition-all group
+      ${isWinner 
+        ? "border-amber-400 bg-gradient-to-br from-amber-50 to-yellow-50" 
+        : "border-slate-200 hover:border-emerald-300 hover:shadow-md"
+      }
+      ${disabled ? "opacity-60 pointer-events-none" : ""}`}>
+
+      <div className="flex items-center gap-5 flex-1">
+        {/* Party Symbol */}
         {partySymbol?.startsWith("http") ? (
-          <img src={partySymbol} alt={partyName}
-            className="w-12 h-12 object-contain rounded border border-gray-200 bg-white p-1" />
+          <img 
+            src={partySymbol} 
+            alt={partyName}
+            className="w-20 h-20 object-contain rounded-2xl border border-slate-100 bg-white p-2 shadow-sm" 
+          />
         ) : (
-          <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-xl">
-            {name[0]}
+          <div className="w-20 h-20 bg-slate-900 rounded-2xl flex items-center justify-center text-white font-bold text-4xl">
+            {name?.[0] || "?"}
           </div>
         )}
-        <div>
-          <div className="flex items-center gap-2">
-            <p className="font-semibold text-dark">{name}</p>
-            {isWinner && <span className="badge-success text-xs">🏆 Winner</span>}
+
+        <div className="flex-1">
+          <div className="flex items-center gap-3">
+            <h3 className="font-semibold text-2xl text-slate-900 group-hover:text-emerald-600 transition-colors">
+              {name}
+            </h3>
+            {isWinner && (
+              <span className="inline-flex items-center gap-1.5 bg-amber-400 text-amber-900 text-xs font-bold px-4 py-1 rounded-3xl">
+                🏆 WINNER
+              </span>
+            )}
           </div>
-          <p className="text-xs text-gray-500">{partyName}</p>
+          
+          <p className="text-emerald-600 font-medium mt-1">{partyName}</p>
+
           {showVoteCount && (
-            <p className="text-sm font-bold text-primary mt-0.5">{voteCount} votes</p>
+            <p className="mt-3 text-sm font-semibold text-slate-700">
+              {voteCount.toLocaleString()} votes
+            </p>
           )}
         </div>
       </div>
 
+      {/* Vote Button */}
       {showVoteButton && (
         <button
           onClick={() => onVote(id)}
           disabled={disabled || voting}
-          className="btn-accent text-sm px-5 py-2 shrink-0">
-          {voting ? "..." : "Vote"}
+          className={`px-8 py-4 rounded-3xl font-semibold text-sm transition-all active:scale-95
+            ${voting 
+              ? "bg-slate-300 text-slate-500 cursor-not-allowed" 
+              : "bg-emerald-600 hover:bg-emerald-700 text-white"
+            }`}
+        >
+          {voting ? "Casting Vote..." : "Vote for this Candidate"}
         </button>
       )}
     </div>

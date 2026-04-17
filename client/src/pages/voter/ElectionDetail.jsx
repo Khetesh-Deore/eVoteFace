@@ -28,18 +28,15 @@ const ElectionDetail = () => {
     try {
       setLoading(true);
 
-      // Fetch election details
       const electionResponse = await api.get(`/elections/${electionId}`);
       setElection(electionResponse.data);
       setCandidates(electionResponse.data.candidates || []);
 
-      // Fetch voter status if logged in
       if (user) {
         const status = await getVoterStatus(electionId);
         setVoterStatus(status);
       }
 
-      // Fetch results if voting or completed
       if (electionResponse.data.phase === 'voting' || electionResponse.data.phase === 'completed') {
         try {
           const resultsResponse = await api.get(`/votes/results/${electionId}`);
@@ -62,7 +59,6 @@ const ElectionDetail = () => {
       return;
     }
 
-    // Validate wallet address format
     if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddressInput)) {
       toast.error('Invalid wallet address format');
       return;
@@ -76,12 +72,9 @@ const ElectionDetail = () => {
       });
       
       toast.success('Registration request sent! Waiting for admin approval.');
-      
-      // Reload election data
       await loadElectionData();
       setWalletAddressInput('');
     } catch (error) {
-      console.error('Request registration error:', error);
       toast.error(error.response?.data?.message || 'Failed to request registration');
     } finally {
       setRequestingRegistration(false);
@@ -90,14 +83,10 @@ const ElectionDetail = () => {
 
   const getPhaseColor = (phase) => {
     switch (phase) {
-      case 'registration':
-        return 'bg-blue-100 text-blue-800';
-      case 'voting':
-        return 'bg-green-100 text-green-800';
-      case 'completed':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      case 'registration': return 'bg-blue-100 text-blue-700 border border-blue-200';
+      case 'voting': return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
+      case 'completed': return 'bg-slate-100 text-slate-700 border border-slate-200';
+      default: return 'bg-slate-100 text-slate-700 border border-slate-200';
     }
   };
 
@@ -123,17 +112,15 @@ const ElectionDetail = () => {
     );
   };
 
-  if (loading) {
-    return <LoadingSpinner />;
-  }
+  if (loading) return <LoadingSpinner />;
 
   if (!election) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900">Election not found</h2>
-          <Link to="/elections" className="text-blue-600 hover:underline mt-4 inline-block">
-            Back to Elections
+          <h2 className="text-3xl font-semibold text-slate-900">Election not found</h2>
+          <Link to="/elections" className="mt-6 inline-block text-emerald-600 hover:underline font-medium">
+            ← Back to All Elections
           </Link>
         </div>
       </div>
@@ -141,60 +128,60 @@ const ElectionDetail = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Back Button */}
-      <button
-        onClick={() => navigate('/elections')}
-        className="text-blue-600 hover:text-blue-800 mb-6 flex items-center gap-2"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-        Back to Elections
-      </button>
+    <div className="min-h-screen bg-slate-50 py-10 px-6">
+      <div className="max-w-screen-2xl mx-auto">
+        
+        {/* Back Button */}
+        <button
+          onClick={() => navigate('/elections')}
+          className="flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-medium mb-8"
+        >
+          ← Back to All Elections
+        </button>
 
-      {/* Election Header */}
-      <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{election.title}</h1>
-            <p className="text-gray-600">{election.description}</p>
+        {/* Main Header Card */}
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-10 mb-10">
+          <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-8">
+            <div className="flex-1">
+              <div className="flex items-center gap-4 mb-4">
+                <h1 className="text-4xl font-semibold tracking-tight text-slate-900" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                  {election.title}
+                </h1>
+                <span className={`px-6 py-2 rounded-3xl text-sm font-medium ${getPhaseColor(election.phase)}`}>
+                  {election.phase.toUpperCase()}
+                </span>
+              </div>
+              <p className="text-slate-600 text-lg leading-relaxed">{election.description}</p>
+            </div>
           </div>
-          <span className={`px-4 py-2 rounded-full text-sm font-medium ${getPhaseColor(election.phase)}`}>
-            {election.phase}
-          </span>
-        </div>
 
-        {/* Election Info */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6 pt-6 border-t border-gray-200">
-          <div>
-            <p className="text-sm text-gray-600 mb-1">Start Date</p>
-            <p className="font-medium text-gray-900">{formatDate(election.startTime)}</p>
+          {/* Election Metadata */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-10 pt-8 border-t border-slate-100">
+            <div>
+              <p className="text-sm text-slate-500">Starts On</p>
+              <p className="font-medium text-slate-900 mt-1">{formatDate(election.startTime)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Ends On</p>
+              <p className="font-medium text-slate-900 mt-1">{formatDate(election.endTime)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Registered Voters</p>
+              <p className="font-medium text-slate-900 mt-1">{election.voterCount || 0}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm text-gray-600 mb-1">End Date</p>
-            <p className="font-medium text-gray-900">{formatDate(election.endTime)}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-600 mb-1">Registered Voters</p>
-            <p className="font-medium text-gray-900">{election.voterCount || 0}</p>
-          </div>
-        </div>
 
-        {/* Voter Actions */}
-        {user && (
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            {voterStatus?.isRegistered ? (
-              <div>
-                {voterStatus.hasVoted ? (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <div className="flex items-center gap-3">
-                      <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+          {/* Voter Action Area */}
+          {user && (
+            <div className="mt-10 pt-8 border-t border-slate-100">
+              {voterStatus?.isRegistered ? (
+                voterStatus.hasVoted ? (
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-3xl p-8">
+                    <div className="flex items-center gap-4">
+                      <div className="text-5xl">🎉</div>
                       <div>
-                        <p className="font-medium text-green-900">You have voted in this election</p>
-                        <p className="text-sm text-green-700">
+                        <p className="text-2xl font-semibold text-emerald-800">You have successfully voted!</p>
+                        <p className="text-emerald-700 mt-2">
                           Voted on {formatDate(voterStatus.votedAt)}
                         </p>
                       </div>
@@ -203,220 +190,168 @@ const ElectionDetail = () => {
                 ) : canVote() ? (
                   <Link
                     to={`/elections/${electionId}/vote`}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+                    className="inline-flex items-center gap-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xl px-12 py-6 rounded-3xl transition-all active:scale-95 shadow-lg"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                    </svg>
-                    Go Vote Now
+                    <span>🗳️</span>
+                    Go to Voting Booth
                   </Link>
                 ) : (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <p className="font-medium text-yellow-900 mb-2">Registration Status</p>
-                    <div className="space-y-2 text-sm">
-                      <div className={`flex items-center gap-2 ${voterStatus.isVerified ? 'text-green-600' : 'text-gray-500'}`}>
-                        {voterStatus.isVerified ? '✓' : '○'} Admin Approval
-                      </div>
-                      <div className={`flex items-center gap-2 ${voterStatus.walletAddress ? 'text-green-600' : 'text-gray-500'}`}>
-                        {voterStatus.walletAddress ? '✓' : '○'} Wallet Connected
-                      </div>
-                      <div className={`flex items-center gap-2 ${voterStatus.facePhotoUrl ? 'text-green-600' : 'text-gray-500'}`}>
-                        {voterStatus.facePhotoUrl ? '✓' : '○'} Face Photo Registered
-                      </div>
-                      <div className={`flex items-center gap-2 ${voterStatus.isRegisteredOnChain ? 'text-green-600' : 'text-gray-500'}`}>
-                        {voterStatus.isRegisteredOnChain ? '✓' : '○'} Blockchain Registration
-                      </div>
+                  <div className="bg-amber-50 border border-amber-200 rounded-3xl p-8">
+                    <p className="font-semibold text-amber-800 mb-4">Complete these steps to vote:</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      {[
+                        { label: "Admin Approval", done: voterStatus.isVerified },
+                        { label: "Wallet Connected", done: !!voterStatus.walletAddress },
+                        { label: "Face Photo Registered", done: !!voterStatus.facePhotoUrl },
+                        { label: "Blockchain Registration", done: voterStatus.isRegisteredOnChain },
+                      ].map((item, idx) => (
+                        <div key={idx} className={`flex items-center gap-3 ${item.done ? 'text-emerald-600' : 'text-slate-500'}`}>
+                          <span className="text-2xl">{item.done ? '✓' : '○'}</span>
+                          <span>{item.label}</span>
+                        </div>
+                      ))}
                     </div>
-                    {election.phase === 'completed' && (
-                      <p className="text-sm text-gray-600 mt-3">This election has ended.</p>
-                    )}
                   </div>
-                )}
-              </div>
-            ) : (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <svg className="w-6 h-6 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <div className="flex-1">
-                    <p className="font-medium text-blue-900">Not Registered</p>
-                    <p className="text-sm text-blue-700 mt-1 mb-3">
-                      You are not registered for this election. Click below to request registration.
-                    </p>
-                    
-                    {/* Wallet Address Input */}
-                    <div className="bg-white rounded-lg p-3 mb-3 border border-blue-200">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Your MetaMask Wallet Address (Required)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="0x..."
-                        value={walletAddressInput}
-                        onChange={(e) => setWalletAddressInput(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500"
-                      />
-                      <div className="mt-2 space-y-1">
-                        <p className="text-xs text-gray-600 flex items-center gap-1">
-                          <span>💡</span>
-                          <span>Open MetaMask → Click account name → Copy address</span>
-                        </p>
-                        <p className="text-xs text-red-600 flex items-center gap-1">
-                          <span>⚠️</span>
-                          <span>Do NOT use admin wallet: 0x5b97...f103</span>
-                        </p>
-                        <p className="text-xs text-blue-600 flex items-center gap-1">
-                          <span>✓</span>
-                          <span>You can use different wallets for different elections</span>
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <button
-                      onClick={handleRequestRegistration}
-                      disabled={requestingRegistration || !walletAddressInput}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 font-medium transition"
-                    >
-                      {requestingRegistration ? 'Requesting...' : 'Request Registration'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+                )
+              ) : (
+                /* Registration Request Form */
+                <div className="bg-white border border-slate-200 rounded-3xl p-8">
+                  <h3 className="text-xl font-semibold mb-2">Register for this Election</h3>
+                  <p className="text-slate-600 mb-6">Enter your MetaMask wallet address to request registration.</p>
 
-        {!user && (
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <p className="text-gray-700">
-                <Link to="/login" className="text-blue-600 hover:underline font-medium">
-                  Login
-                </Link>
-                {' '}or{' '}
-                <Link to="/register" className="text-blue-600 hover:underline font-medium">
-                  Register
-                </Link>
-                {' '}to participate in this election.
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Candidates Section */}
-      <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Candidates</h2>
-        
-        {candidates.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            No candidates have been added yet.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {candidates.map((candidate) => {
-              const candidateResult = results?.candidates?.find(c => c.id === candidate.onChainId);
-              const voteCount = candidateResult?.voteCount || '0';
-              const totalVotes = results?.totalVotesCast || '0';
-              const percentage = totalVotes > 0 
-                ? ((Number(voteCount) / Number(totalVotes)) * 100).toFixed(1)
-                : 0;
-
-              return (
-                <div
-                  key={candidate._id}
-                  className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition"
-                >
-                  <div className="flex items-center gap-4 mb-4">
-                    <img
-                      src={candidate.partySymbol}
-                      alt={candidate.partyName}
-                      className="w-16 h-16 object-cover rounded"
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">MetaMask Wallet Address</label>
+                    <input
+                      type="text"
+                      placeholder="0x1234...abcd"
+                      value={walletAddressInput}
+                      onChange={(e) => setWalletAddressInput(e.target.value)}
+                      className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl font-mono focus:border-emerald-500 focus:outline-none"
                     />
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900">{candidate.name}</h3>
-                      <p className="text-sm text-gray-600">{candidate.partyName}</p>
-                    </div>
                   </div>
 
-                  {/* Show results if voting or completed */}
-                  {results && (election.phase === 'voting' || election.phase === 'completed') && (
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-gray-600">Votes</span>
-                        <span className="font-semibold text-gray-900">{voteCount}</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-blue-600 h-2 rounded-full transition-all"
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1 text-right">{percentage}%</p>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                  <button
+                    onClick={handleRequestRegistration}
+                    disabled={requestingRegistration || !walletAddressInput}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-semibold py-4 rounded-3xl transition-all"
+                  >
+                    {requestingRegistration ? 'Sending Request...' : 'Request Registration'}
+                  </button>
 
-      {/* Results Section */}
-      {results && (election.phase === 'voting' || election.phase === 'completed') && (
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">
-              {election.phase === 'completed' ? 'Final Results' : 'Live Results'}
-            </h2>
-            {election.phase === 'voting' && (
-              <div className="flex items-center gap-2 text-green-600">
-                <span className="w-2 h-2 bg-green-600 rounded-full animate-pulse"></span>
-                <span className="text-sm font-medium">Live</span>
-              </div>
-            )}
-          </div>
-
-          {/* Winner */}
-          {results.winner && election.phase === 'completed' && (
-            <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 border-2 border-yellow-400 rounded-lg p-6 mb-6">
-              <div className="flex items-center gap-3 mb-2">
-                <svg className="w-8 h-8 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-                <h3 className="text-2xl font-bold text-gray-900">Winner</h3>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xl font-semibold text-gray-900">{results.winner.name}</p>
-                  <p className="text-gray-700">{results.winner.party}</p>
+                  <div className="mt-6 text-xs text-slate-500 space-y-1">
+                    <p>💡 Open MetaMask → Click on your account → Copy address</p>
+                    <p>⚠️ Use a different wallet for each election if you want</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-3xl font-bold text-yellow-600">{results.winner.voteCount}</p>
-                  <p className="text-sm text-gray-600">votes</p>
-                </div>
-              </div>
+              )}
             </div>
           )}
 
-          {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-sm text-gray-600 mb-1">Total Votes Cast</p>
-              <p className="text-2xl font-bold text-gray-900">{results.totalVotesCast}</p>
+          {!user && (
+            <div className="mt-8 bg-slate-50 border border-slate-200 rounded-3xl p-8 text-center">
+              <p className="text-slate-700">
+                Please <Link to="/login" className="text-emerald-600 font-medium hover:underline">Login</Link> or{' '}
+                <Link to="/register" className="text-emerald-600 font-medium hover:underline">Register</Link> to participate in this election.
+              </p>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-sm text-gray-600 mb-1">Total Candidates</p>
-              <p className="text-2xl font-bold text-gray-900">{results.candidates?.length || 0}</p>
+          )}
+        </div>
+
+        {/* Candidates Section */}
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-10 mb-10">
+          <h2 className="text-3xl font-semibold mb-8">Contestants</h2>
+          
+          {candidates.length === 0 ? (
+            <p className="text-slate-500 text-center py-12">No candidates added yet.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {candidates.map((candidate) => {
+                const candidateResult = results?.candidates?.find(c => c.id === candidate.onChainId);
+                const voteCount = candidateResult?.voteCount || 0;
+                const totalVotes = results?.totalVotesCast || 0;
+                const percentage = totalVotes > 0 ? ((voteCount / totalVotes) * 100).toFixed(1) : 0;
+
+                return (
+                  <div key={candidate._id} className="border border-slate-200 rounded-3xl p-8 hover:shadow-xl transition-all card-hover">
+                    <div className="flex items-center gap-5 mb-6">
+                      <img
+                        src={candidate.partySymbol}
+                        alt={candidate.partyName}
+                        className="w-24 h-24 object-cover rounded-2xl border border-slate-100"
+                      />
+                      <div>
+                        <h3 className="text-2xl font-semibold">{candidate.name}</h3>
+                        <p className="text-emerald-600 font-medium">{candidate.partyName}</p>
+                      </div>
+                    </div>
+
+                    {(election.phase === 'voting' || election.phase === 'completed') && results && (
+                      <div className="pt-6 border-t border-slate-100">
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-slate-600">Votes Received</span>
+                          <span className="font-semibold">{voteCount}</span>
+                        </div>
+                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <div 
+                            className="h-2 bg-emerald-500 rounded-full transition-all duration-500"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                        <p className="text-right text-xs text-slate-500 mt-1">{percentage}%</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-sm text-gray-600 mb-1">Registered Voters</p>
-              <p className="text-2xl font-bold text-gray-900">{election.voterCount || 0}</p>
+          )}
+        </div>
+
+        {/* Live / Final Results Section */}
+        {results && (election.phase === 'voting' || election.phase === 'completed') && (
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-10">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-3xl font-semibold">
+                {election.phase === 'completed' ? 'Final Results' : 'Live Results'}
+              </h2>
+              {election.phase === 'voting' && (
+                <div className="flex items-center gap-2 text-emerald-600 font-medium">
+                  <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
+                  LIVE UPDATING
+                </div>
+              )}
+            </div>
+
+            {results.winner && election.phase === 'completed' && (
+              <div className="bg-gradient-to-br from-amber-400 to-yellow-500 text-white rounded-3xl p-10 mb-10">
+                <div className="flex items-center gap-6">
+                  <span className="text-7xl">🏆</span>
+                  <div>
+                    <p className="uppercase tracking-[2px] text-sm opacity-90">Declared Winner</p>
+                    <h3 className="text-4xl font-bold mt-2">{results.winner.name}</h3>
+                    <p className="text-2xl opacity-90 mt-1">{results.winner.party}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+              <div className="bg-slate-50 rounded-2xl p-6">
+                <p className="text-slate-500">Total Votes Cast</p>
+                <p className="text-4xl font-semibold text-slate-900 mt-3">{results.totalVotesCast}</p>
+              </div>
+              <div className="bg-slate-50 rounded-2xl p-6">
+                <p className="text-slate-500">Candidates</p>
+                <p className="text-4xl font-semibold text-slate-900 mt-3">{results.candidates?.length || 0}</p>
+              </div>
+              <div className="bg-slate-50 rounded-2xl p-6">
+                <p className="text-slate-500">Registered Voters</p>
+                <p className="text-4xl font-semibold text-slate-900 mt-3">{election.voterCount || 0}</p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

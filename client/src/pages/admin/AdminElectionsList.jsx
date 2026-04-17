@@ -8,7 +8,7 @@ const AdminElectionsList = () => {
   const navigate = useNavigate();
   const [elections, setElections] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); // all, registration, voting, completed
+  const [filter, setFilter] = useState('all');
 
   useEffect(() => {
     fetchElections();
@@ -30,13 +30,13 @@ const AdminElectionsList = () => {
   const getPhaseColor = (phase) => {
     switch (phase) {
       case 'registration':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 text-blue-700 border border-blue-200';
       case 'voting':
-        return 'bg-green-100 text-green-800';
+        return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
       case 'completed':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-slate-100 text-slate-700 border border-slate-200';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-slate-100 text-slate-700 border border-slate-200';
     }
   };
 
@@ -58,170 +58,137 @@ const AdminElectionsList = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Elections Management</h1>
-          <p className="text-gray-600 mt-2">Manage all elections and their settings</p>
-        </div>
-        <Link
-          to="/admin/elections/new"
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Create New Election
-        </Link>
-      </div>
+    <div className="min-h-screen bg-slate-50 py-10 px-6">
+      <div className="max-w-screen-2xl mx-auto">
+        
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+          <div>
+            <h1 className="text-4xl font-semibold tracking-tight text-slate-900" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              Elections Management
+            </h1>
+            <p className="text-slate-600 mt-2 text-lg">Oversee all elections, phases, and performance</p>
+          </div>
 
-      {/* Filter Tabs */}
-      <div className="bg-white rounded-lg shadow mb-6">
-        <div className="flex border-b border-gray-200">
-          <button
-            onClick={() => setFilter('all')}
-            className={`px-6 py-3 font-medium transition ${
-              filter === 'all'
-                ? 'border-b-2 border-blue-600 text-blue-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
+          <Link
+            to="/admin/elections/new"
+            className="inline-flex items-center gap-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-8 py-4 rounded-3xl transition-all active:scale-95 shadow-lg"
           >
-            All Elections ({elections.length})
-          </button>
-          <button
-            onClick={() => setFilter('registration')}
-            className={`px-6 py-3 font-medium transition ${
-              filter === 'registration'
-                ? 'border-b-2 border-blue-600 text-blue-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Registration ({elections.filter(e => e.phase === 'registration').length})
-          </button>
-          <button
-            onClick={() => setFilter('voting')}
-            className={`px-6 py-3 font-medium transition ${
-              filter === 'voting'
-                ? 'border-b-2 border-blue-600 text-blue-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Voting ({elections.filter(e => e.phase === 'voting').length})
-          </button>
-          <button
-            onClick={() => setFilter('completed')}
-            className={`px-6 py-3 font-medium transition ${
-              filter === 'completed'
-                ? 'border-b-2 border-blue-600 text-blue-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Completed ({elections.filter(e => e.phase === 'completed').length})
-          </button>
+            <i className="fa-solid fa-plus text-xl"></i>
+            Create New Election
+          </Link>
         </div>
-      </div>
 
-      {/* Elections Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        {filteredElections.length === 0 ? (
-          <div className="px-6 py-12 text-center">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No elections found</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {filter === 'all' 
-                ? 'Get started by creating a new election.'
-                : `No elections in ${filter} phase.`
-              }
-            </p>
-            {filter === 'all' && (
-              <div className="mt-6">
+        {/* Filter Tabs */}
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 mb-8 overflow-hidden">
+          <div className="flex flex-wrap border-b border-slate-100">
+            {[
+              { key: 'all', label: 'All Elections', count: elections.length },
+              { key: 'registration', label: 'Registration', count: elections.filter(e => e.phase === 'registration').length },
+              { key: 'voting', label: 'Voting Phase', count: elections.filter(e => e.phase === 'voting').length },
+              { key: 'completed', label: 'Completed', count: elections.filter(e => e.phase === 'completed').length },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setFilter(tab.key)}
+                className={`flex-1 min-w-[140px] px-8 py-5 text-sm font-medium transition-all border-b-4 ${
+                  filter === tab.key
+                    ? 'border-emerald-600 text-emerald-700 bg-emerald-50'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                }`}
+              >
+                {tab.label} 
+                <span className="ml-2 text-xs bg-slate-200 px-2.5 py-0.5 rounded-full font-mono">
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Elections Table / List */}
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+          {filteredElections.length === 0 ? (
+            <div className="px-10 py-20 text-center">
+              <div className="text-7xl mb-6 opacity-40">📭</div>
+              <h3 className="text-2xl font-semibold text-slate-900 mb-2">No elections found</h3>
+              <p className="text-slate-600 max-w-sm mx-auto">
+                {filter === 'all' 
+                  ? 'Get started by creating your first election.' 
+                  : `There are currently no elections in the ${filter} phase.`
+                }
+              </p>
+              {filter === 'all' && (
                 <Link
                   to="/admin/elections/new"
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                  className="mt-8 inline-flex items-center gap-3 bg-emerald-600 text-white px-8 py-4 rounded-3xl font-semibold hover:bg-emerald-700 transition-all"
                 >
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Create Election
+                  <i className="fa-solid fa-plus"></i>
+                  Create New Election
                 </Link>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Election
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Phase
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Duration
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Voters
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Candidates
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Votes Cast
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredElections.map((election) => (
-                  <tr
-                    key={election._id}
-                    onClick={() => navigate(`/admin/elections/${election._id}`)}
-                    className="hover:bg-gray-50 cursor-pointer transition"
-                  >
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">{election.title}</div>
-                      <div className="text-sm text-gray-500">{election.description}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPhaseColor(election.phase)}`}>
-                        {election.phase}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <div>{formatDate(election.startTime)}</div>
-                      <div className="text-xs text-gray-400">to {formatDate(election.endTime)}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {election.stats?.voterCount || 0}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {election.stats?.candidateCount || 0}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {election.stats?.votedCount || 0}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Link
-                        to={`/admin/elections/${election._id}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        Manage
-                      </Link>
-                    </td>
+              )}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50">
+                    <th className="px-8 py-5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Election Details</th>
+                    <th className="px-8 py-5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Current Phase</th>
+                    <th className="px-8 py-5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Duration</th>
+                    <th className="px-8 py-5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Voters</th>
+                    <th className="px-8 py-5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Candidates</th>
+                    <th className="px-8 py-5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Votes Cast</th>
+                    <th className="px-8 py-5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredElections.map((election) => (
+                    <tr
+                      key={election._id}
+                      onClick={() => navigate(`/admin/elections/${election._id}`)}
+                      className="hover:bg-slate-50 cursor-pointer transition-all group"
+                    >
+                      <td className="px-8 py-7">
+                        <div className="font-semibold text-slate-900 text-lg group-hover:text-emerald-600 transition-colors">
+                          {election.title}
+                        </div>
+                        <div className="text-slate-600 mt-1 line-clamp-2 text-sm">{election.description}</div>
+                      </td>
+                      <td className="px-8 py-7 whitespace-nowrap">
+                        <span className={`inline-flex px-5 py-2 text-sm font-medium rounded-3xl ${getPhaseColor(election.phase)}`}>
+                          {election.phase.charAt(0).toUpperCase() + election.phase.slice(1)}
+                        </span>
+                      </td>
+                      <td className="px-8 py-7 whitespace-nowrap text-sm text-slate-600">
+                        <div>{formatDate(election.startTime)}</div>
+                        <div className="text-xs text-slate-400 mt-0.5">to {formatDate(election.endTime)}</div>
+                      </td>
+                      <td className="px-8 py-7 text-lg font-medium text-slate-900">
+                        {election.stats?.voterCount || 0}
+                      </td>
+                      <td className="px-8 py-7 text-lg font-medium text-slate-900">
+                        {election.stats?.candidateCount || 0}
+                      </td>
+                      <td className="px-8 py-7 text-lg font-medium text-emerald-600">
+                        {election.stats?.votedCount || 0}
+                      </td>
+                      <td className="px-8 py-7 text-right">
+                        <span 
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-medium"
+                        >
+                          Manage Election 
+                          <i className="fa-solid fa-arrow-right text-sm"></i>
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -37,7 +37,6 @@ const VotingPage = () => {
   useEffect(() => {
     // Auto-advance to step 2 if wallet is connected and verified
     if (currentStep === 1 && isConnected && isCorrectNetwork && voterStatus?.isRegisteredOnChain) {
-      // Allow any wallet that is registered on-chain for this election
       setCurrentStep(2);
     }
   }, [isConnected, isCorrectNetwork, voterStatus, currentStep]);
@@ -46,16 +45,13 @@ const VotingPage = () => {
     try {
       setLoading(true);
 
-      // Fetch election details
       const electionResponse = await api.get(`/elections/${electionId}`);
       setElection(electionResponse.data);
       setCandidates(electionResponse.data.candidates || []);
 
-      // Fetch voter status
       const statusResponse = await api.get(`/voters/elections/${electionId}/status`);
       setVoterStatus(statusResponse.data);
 
-      // Validate voter eligibility
       if (!statusResponse.data.isRegistered) {
         toast.error('You are not registered for this election');
         navigate(`/elections/${electionId}`);
@@ -102,7 +98,7 @@ const VotingPage = () => {
         liveImageBase64: liveImage,
         electionId
       }, {
-        timeout: 60000 // Increase timeout to 60 seconds
+        timeout: 60000
       });
 
       if (response.data.match) {
@@ -116,7 +112,7 @@ const VotingPage = () => {
     } catch (error) {
       console.error('Face verification error:', error);
       if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
-        toast.error('Face verification is taking too long. Please ensure the Python service is running and try again.');
+        toast.error('Face verification is taking too long. Please ensure the Python service is running.');
       } else {
         toast.error(error.response?.data?.message || 'Face verification failed');
       }
@@ -129,15 +125,9 @@ const VotingPage = () => {
   const handleSendOTP = async () => {
     try {
       setProcessing(true);
-
-      const response = await api.post('/otp/send', {
-        faceVerifiedToken,
-        electionId
-      });
-
+      const response = await api.post('/otp/send', { faceVerifiedToken, electionId });
       toast.success(`OTP sent to ${response.data.email}`);
     } catch (error) {
-      console.error('Send OTP error:', error);
       toast.error(error.response?.data?.message || 'Failed to send OTP');
     } finally {
       setProcessing(false);
@@ -147,19 +137,13 @@ const VotingPage = () => {
   const handleVerifyOTP = async (otpCode) => {
     try {
       setProcessing(true);
-
-      const response = await api.post('/otp/verify', {
-        code: otpCode,
-        electionId
-      });
-
+      const response = await api.post('/otp/verify', { code: otpCode, electionId });
       if (response.data.verified) {
         setVoteAuthToken(response.data.voteAuthToken);
         toast.success('OTP verified! You can now cast your vote.');
         setCurrentStep(4);
       }
     } catch (error) {
-      console.error('Verify OTP error:', error);
       toast.error(error.response?.data?.message || 'Invalid OTP');
     } finally {
       setProcessing(false);
@@ -175,17 +159,13 @@ const VotingPage = () => {
     try {
       setProcessing(true);
 
-      // Get contract instance
       const contract = await getElectionContract(election.contractAddress);
-
-      // Cast vote on blockchain
       const tx = await contract.castVote(selectedCandidate.onChainId);
       toast.info('Transaction submitted. Waiting for confirmation...');
 
       const receipt = await tx.wait();
       const transactionHash = receipt.hash;
 
-      // Record vote on backend
       await api.post('/votes/record', {
         electionId,
         candidateId: selectedCandidate.onChainId,
@@ -194,11 +174,10 @@ const VotingPage = () => {
       });
 
       setTxHash(transactionHash);
-      toast.success('Vote cast successfully!');
+      toast.success('Vote cast successfully on blockchain!');
       setCurrentStep(5);
     } catch (error) {
       console.error('Cast vote error:', error);
-      
       if (error.code === 'ACTION_REJECTED') {
         toast.error('Transaction rejected by user');
       } else if (error.message?.includes('already voted')) {
@@ -215,283 +194,202 @@ const VotingPage = () => {
     return <LoadingSpinner />;
   }
 
-  if (!election) {
-    return null;
-  }
-
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Cast Your Vote</h1>
-        <p className="text-gray-600">{election.title}</p>
-      </div>
+    <div className="min-h-screen bg-slate-50 py-12 px-6">
+      <div className="max-w-3xl mx-auto">
+        
+        {/* Header */}
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-3 bg-emerald-100 text-emerald-700 px-6 py-2 rounded-3xl text-sm font-medium mb-4">
+            <i className="fa-solid fa-fingerprint"></i>
+            SECURE VOTING BOOTH
+          </div>
+          <h1 className="text-4xl font-semibold tracking-tight text-slate-900" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+            {election.title}
+          </h1>
+          <p className="text-slate-600 mt-3">Cast your vote securely with biometric verification</p>
+        </div>
 
-      {/* Progress Steps */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <div className="flex items-center justify-between">
-          {[
-            { num: 1, label: 'Wallet', icon: '🦊' },
-            { num: 2, label: 'Face', icon: '📷' },
-            { num: 3, label: 'OTP', icon: '📧' },
-            { num: 4, label: 'Vote', icon: '🗳️' },
-            { num: 5, label: 'Success', icon: '✓' }
-          ].map((step, index) => (
-            <div key={step.num} className="flex items-center">
-              <div className="flex flex-col items-center">
-                <div
-                  className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold transition ${
-                    currentStep >= step.num
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-500'
-                  }`}
-                >
+        {/* Progress Steps */}
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 mb-10">
+          <div className="flex justify-between items-center">
+            {[
+              { num: 1, label: 'Wallet', icon: '🦊' },
+              { num: 2, label: 'Face ID', icon: '📷' },
+              { num: 3, label: 'OTP', icon: '📧' },
+              { num: 4, label: 'Vote', icon: '🗳️' },
+              { num: 5, label: 'Done', icon: '✅' }
+            ].map((step, index) => (
+              <div key={step.num} className="flex flex-col items-center relative flex-1">
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl transition-all duration-300 border-4 border-white shadow-sm
+                  ${currentStep >= step.num 
+                    ? 'bg-emerald-600 text-white scale-110' 
+                    : 'bg-slate-100 text-slate-400'}`}>
                   {currentStep > step.num ? '✓' : step.icon}
                 </div>
-                <span className="text-xs mt-2 text-gray-600">{step.label}</span>
+                <span className={`text-xs mt-3 font-medium ${currentStep >= step.num ? 'text-emerald-700' : 'text-slate-500'}`}>
+                  {step.label}
+                </span>
+                
+                {index < 4 && (
+                  <div className={`absolute top-7 left-1/2 w-full h-[3px] -translate-x-1/2 transition-all
+                    ${currentStep > step.num ? 'bg-emerald-600' : 'bg-slate-200'}`} />
+                )}
               </div>
-              {index < 4 && (
-                <div
-                  className={`w-16 h-1 mx-2 transition ${
-                    currentStep > step.num ? 'bg-blue-600' : 'bg-gray-200'
-                  }`}
-                />
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* Step Content */}
-      <div className="bg-white rounded-lg shadow p-8">
-        {/* Step 1: Wallet Verification */}
-        {currentStep === 1 && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Step 1: Wallet Verification</h2>
-              <p className="text-gray-600">Connect your registered MetaMask wallet to continue</p>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800">
-                <strong>Note:</strong> You can use any MetaMask wallet that is registered on the blockchain for this election.
+        {/* Main Content Card */}
+        <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-10">
+          
+          {/* Step 1: Wallet */}
+          {currentStep === 1 && (
+            <div className="text-center py-8">
+              <div className="text-6xl mb-6">🦊</div>
+              <h2 className="text-3xl font-semibold mb-4">Connect Your Wallet</h2>
+              <p className="text-slate-600 max-w-md mx-auto mb-8">
+                Your registered MetaMask wallet is required to cast a vote on the blockchain.
               </p>
-            </div>
 
-            {!window.ethereum ? (
-              <div className="text-center py-8">
-                <p className="text-gray-600 mb-4">MetaMask is not installed</p>
-                <a
-                  href="https://metamask.io"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium"
-                >
+              {!window.ethereum ? (
+                <a href="https://metamask.io" target="_blank" rel="noreferrer" className="inline-block bg-orange-600 text-white px-10 py-4 rounded-3xl font-semibold">
                   Install MetaMask
                 </a>
-              </div>
-            ) : !isConnected ? (
-              <div className="text-center py-8">
-                <button
-                  onClick={connectWallet}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
-                >
-                  🦊 Connect MetaMask
+              ) : !isConnected ? (
+                <button onClick={connectWallet} className="bg-emerald-600 hover:bg-emerald-700 text-white px-12 py-5 rounded-3xl font-semibold text-lg transition-all">
+                  Connect MetaMask
                 </button>
-              </div>
-            ) : !isCorrectNetwork ? (
-              <div className="text-center py-8">
-                <p className="text-red-600 mb-4">Wrong network detected</p>
-                <button
-                  onClick={switchToSepolia}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium"
-                >
-                  Switch to Sepolia
+              ) : !isCorrectNetwork ? (
+                <button onClick={switchToSepolia} className="bg-red-600 text-white px-12 py-5 rounded-3xl font-semibold">
+                  Switch to Sepolia Network
                 </button>
-              </div>
-            ) : (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <p className="text-green-800 flex items-center gap-2">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Wallet connected! Proceeding to face verification...
-                </p>
-                <p className="text-sm text-green-700 mt-2">
-                  Connected: <span className="font-mono">{address}</span>
-                </p>
-              </div>
-            )}
-          </div>
-        )}
+              ) : (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-3xl p-8">
+                  <p className="text-emerald-700 font-medium">Wallet Connected Successfully</p>
+                  <p className="font-mono text-sm text-emerald-600 mt-3 break-all">{address}</p>
+                  <p className="text-emerald-600 text-sm mt-8">Proceeding to Face Verification...</p>
+                </div>
+              )}
+            </div>
+          )}
 
-        {/* Step 2: Face Verification */}
-        {currentStep === 2 && (
-          <div className="space-y-6">
+          {/* Step 2: Face Verification */}
+          {currentStep === 2 && (
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Step 2: Face Verification</h2>
-              <p className="text-gray-600">Capture your live photo for biometric verification</p>
-            </div>
+              <h2 className="text-3xl font-semibold text-center mb-8">Face Verification</h2>
+              <p className="text-slate-600 text-center mb-8 max-w-md mx-auto">
+                Look directly at the camera. Ensure good lighting and remove glasses if possible.
+              </p>
 
-            <WebcamCapture
-              onCapture={setLiveImage}
-              loading={processing}
-              disabled={processing}
-            />
+              <WebcamCapture onCapture={setLiveImage} loading={processing} />
 
-            {liveImage && (
-              <button
-                onClick={handleFaceVerification}
-                disabled={processing}
-                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50"
-              >
-                {processing ? 'Verifying...' : 'Verify Face & Continue'}
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Step 3: OTP Verification */}
-        {currentStep === 3 && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Step 3: OTP Verification</h2>
-              <p className="text-gray-600">Enter the 6-digit code sent to your email</p>
-            </div>
-
-            <div className="text-center py-4">
-              <button
-                onClick={handleSendOTP}
-                disabled={processing}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium disabled:opacity-50 mb-6"
-              >
-                {processing ? 'Sending...' : 'Send OTP'}
-              </button>
-            </div>
-
-            <OTPInput onComplete={handleVerifyOTP} loading={processing} />
-
-            <p className="text-sm text-gray-500 text-center">
-              Didn't receive the code?{' '}
-              <button
-                onClick={handleSendOTP}
-                disabled={processing}
-                className="text-blue-600 hover:underline disabled:opacity-50"
-              >
-                Resend OTP
-              </button>
-            </p>
-          </div>
-        )}
-
-        {/* Step 4: Cast Vote */}
-        {currentStep === 4 && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Step 4: Select Candidate</h2>
-              <p className="text-gray-600">Choose your candidate and cast your vote</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {candidates.map((candidate) => (
+              {liveImage && (
                 <button
-                  key={candidate._id}
-                  onClick={() => setSelectedCandidate(candidate)}
-                  className={`border-2 rounded-lg p-4 text-left transition ${
-                    selectedCandidate?._id === candidate._id
-                      ? 'border-blue-600 bg-blue-50'
-                      : 'border-gray-200 hover:border-blue-300'
-                  }`}
+                  onClick={handleFaceVerification}
+                  disabled={processing}
+                  className="mt-8 w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-semibold py-5 rounded-3xl text-lg transition-all"
                 >
-                  <div className="flex items-center gap-4">
-                    <img
-                      src={candidate.partySymbol}
-                      alt={candidate.partyName}
-                      className="w-16 h-16 object-cover rounded"
-                    />
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{candidate.name}</h3>
-                      <p className="text-sm text-gray-600">{candidate.partyName}</p>
+                  {processing ? 'Verifying Face...' : 'Verify My Face & Continue'}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Step 3: OTP */}
+          {currentStep === 3 && (
+            <div className="text-center">
+              <h2 className="text-3xl font-semibold mb-4">Enter OTP</h2>
+              <p className="text-slate-600 mb-8">A 6-digit code has been sent to your registered email</p>
+              
+              <button 
+                onClick={handleSendOTP} 
+                disabled={processing}
+                className="mb-8 px-8 py-3 bg-slate-900 text-white rounded-3xl font-medium"
+              >
+                {processing ? 'Sending...' : 'Resend OTP'}
+              </button>
+
+              <OTPInput onComplete={handleVerifyOTP} loading={processing} />
+            </div>
+          )}
+
+          {/* Step 4: Select Candidate & Vote */}
+          {currentStep === 4 && (
+            <div>
+              <h2 className="text-3xl font-semibold text-center mb-8">Choose Your Candidate</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                {candidates.map((candidate) => (
+                  <button
+                    key={candidate._id}
+                    onClick={() => setSelectedCandidate(candidate)}
+                    className={`border-2 rounded-3xl p-6 text-left transition-all hover:shadow-md ${
+                      selectedCandidate?._id === candidate._id 
+                        ? 'border-emerald-600 bg-emerald-50' 
+                        : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex gap-5 items-center">
+                      <img 
+                        src={candidate.partySymbol} 
+                        alt={candidate.partyName} 
+                        className="w-20 h-20 object-cover rounded-2xl" 
+                      />
+                      <div>
+                        <h3 className="text-xl font-semibold">{candidate.name}</h3>
+                        <p className="text-emerald-600 font-medium">{candidate.partyName}</p>
+                      </div>
                     </div>
-                    {selectedCandidate?._id === candidate._id && (
-                      <svg className="w-6 h-6 text-blue-600 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    )}
-                  </div>
+                  </button>
+                ))}
+              </div>
+
+              {selectedCandidate && (
+                <button
+                  onClick={handleCastVote}
+                  disabled={processing}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-semibold py-5 rounded-3xl text-xl transition-all active:scale-[0.985]"
+                >
+                  {processing ? 'Casting Vote on Blockchain...' : `Cast Vote for ${selectedCandidate.name}`}
                 </button>
-              ))}
+              )}
             </div>
+          )}
 
-            {selectedCandidate && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <p className="text-yellow-800 font-medium">
-                  ⚠️ You are about to vote for: <strong>{selectedCandidate.name}</strong>
-                </p>
-                <p className="text-sm text-yellow-700 mt-1">
-                  This action cannot be undone. Please confirm your selection.
-                </p>
+          {/* Step 5: Success */}
+          {currentStep === 5 && (
+            <div className="text-center py-12">
+              <div className="mx-auto w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mb-8">
+                <span className="text-6xl">🎉</span>
               </div>
-            )}
+              <h2 className="text-4xl font-semibold text-slate-900 mb-4">Vote Cast Successfully!</h2>
+              <p className="text-slate-600 max-w-md mx-auto mb-8">Your vote has been securely recorded on the Ethereum Sepolia blockchain.</p>
 
-            <button
-              onClick={handleCastVote}
-              disabled={!selectedCandidate || processing}
-              className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {processing ? 'Casting Vote...' : 'Cast Vote'}
-            </button>
-          </div>
-        )}
+              <div className="bg-slate-50 border border-slate-200 rounded-3xl p-6 mb-10 text-left">
+                <p className="text-xs text-slate-500 mb-1">Transaction Hash</p>
+                <p className="font-mono text-sm break-all text-slate-900">{txHash}</p>
+                <a 
+                  href={`https://sepolia.etherscan.io/tx/${txHash}`} 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="text-emerald-600 hover:underline text-sm mt-4 inline-block"
+                >
+                  View on Etherscan →
+                </a>
+              </div>
 
-        {/* Step 5: Success */}
-        {currentStep === 5 && (
-          <div className="space-y-6 text-center">
-            <div className="flex justify-center">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
-                <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+              <div className="flex gap-4 justify-center">
+                <button onClick={() => navigate(`/elections/${electionId}`)} className="px-10 py-4 border border-slate-300 rounded-3xl font-medium">
+                  View Election
+                </button>
+                <button onClick={() => navigate('/dashboard')} className="px-10 py-4 bg-emerald-600 text-white rounded-3xl font-medium">
+                  Back to Dashboard
+                </button>
               </div>
             </div>
-
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Vote Cast Successfully!</h2>
-              <p className="text-gray-600">Your vote has been recorded on the blockchain</p>
-            </div>
-
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <p className="text-sm text-gray-600 mb-2">Transaction Hash:</p>
-              <p className="font-mono text-xs break-all text-gray-900">{txHash}</p>
-              <a
-                href={`https://sepolia.etherscan.io/tx/${txHash}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 text-blue-600 hover:underline text-sm mt-3"
-              >
-                View on Etherscan
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </a>
-            </div>
-
-            <div className="flex gap-4 justify-center">
-              <button
-                onClick={() => navigate(`/elections/${electionId}`)}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
-              >
-                View Election Details
-              </button>
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
-              >
-                Back to Dashboard
-              </button>
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
