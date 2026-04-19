@@ -496,14 +496,109 @@ const VotersTab = ({ election, voters, onApproveVoter, onUploadFace, onRegisterO
         </div>
       )}
 
-      {/* Face Upload Modal - Preserved with Webcam */}
+      {/* Face Upload Modal */}
       {faceUploadModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full overflow-hidden">
             <div className="p-8">
-              <h3 className="text-2xl font-semibold mb-6">Face Photo Upload</h3>
-              {/* Webcam / File logic remains exactly as you wrote */}
-              {/* ... (your original modal logic is preserved) */}
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-semibold">Face Photo Upload</h3>
+                <button
+                  onClick={() => { setFaceUploadModal(null); setCapturedImage(null); setUploadMethod('file'); }}
+                  className="text-slate-400 hover:text-slate-600 text-2xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Method Tabs */}
+              <div className="flex gap-2 mb-6 bg-slate-100 p-1 rounded-2xl">
+                <button
+                  onClick={() => { setUploadMethod('file'); setCapturedImage(null); }}
+                  className={`flex-1 py-2 rounded-xl text-sm font-medium transition ${uploadMethod === 'file' ? 'bg-white shadow text-slate-900' : 'text-slate-500'}`}
+                >
+                  Upload File
+                </button>
+                <button
+                  onClick={() => { setUploadMethod('webcam'); setCapturedImage(null); }}
+                  className={`flex-1 py-2 rounded-xl text-sm font-medium transition ${uploadMethod === 'webcam' ? 'bg-white shadow text-slate-900' : 'text-slate-500'}`}
+                >
+                  Use Webcam
+                </button>
+              </div>
+
+              {/* File Upload */}
+              {uploadMethod === 'file' && (
+                <div className="space-y-4">
+                  <div className="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center">
+                    <p className="text-slate-500 mb-4">Select a clear frontal face photo</p>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={uploading}
+                      onChange={(e) => handleFileUpload(faceUploadModal.userId, e)}
+                      className="w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
+                    />
+                  </div>
+                  {uploading && <p className="text-center text-emerald-600 text-sm">Uploading to Cloudinary...</p>}
+                </div>
+              )}
+
+              {/* Webcam Capture */}
+              {uploadMethod === 'webcam' && (
+                <div className="space-y-4">
+                  <div className="bg-blue-50 rounded-xl p-3 text-xs text-blue-700">
+                    💡 Face the camera directly · Good lighting · Remove glasses if possible
+                  </div>
+
+                  {!capturedImage ? (
+                    <div className="relative">
+                      <Webcam
+                        ref={webcamRef}
+                        screenshotFormat="image/jpeg"
+                        screenshotQuality={0.9}
+                        className="w-full rounded-2xl border-2 border-slate-200"
+                        videoConstraints={{ facingMode: 'user', width: 480, height: 360 }}
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="w-36 h-44 border-2 border-dashed border-white opacity-60 rounded-full" />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <img src={capturedImage} alt="Captured" className="w-full rounded-2xl border-2 border-emerald-500" />
+                      <span className="absolute top-2 right-2 bg-emerald-600 text-white text-xs px-2 py-1 rounded-full">Captured</span>
+                    </div>
+                  )}
+
+                  {!capturedImage ? (
+                    <button
+                      onClick={handleWebcamCapture}
+                      disabled={uploading}
+                      className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-medium disabled:opacity-50"
+                    >
+                      📸 Capture Photo
+                    </button>
+                  ) : (
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setCapturedImage(null)}
+                        disabled={uploading}
+                        className="flex-1 py-3 border border-slate-200 rounded-2xl text-sm font-medium hover:bg-slate-50 disabled:opacity-50"
+                      >
+                        🔄 Retake
+                      </button>
+                      <button
+                        onClick={() => handleWebcamSubmit(faceUploadModal.userId)}
+                        disabled={uploading}
+                        className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-medium disabled:opacity-50"
+                      >
+                        {uploading ? 'Uploading...' : '✓ Upload'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
