@@ -32,6 +32,8 @@ const VotingPage = () => {
   const [processing, setProcessing] = useState(false);
   const [processingMessage, setProcessingMessage] = useState('');
   const [processingSubMessage, setProcessingSubMessage] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [maskedEmail, setMaskedEmail] = useState('');
 
   useEffect(() => {
     loadElectionData();
@@ -135,9 +137,28 @@ const VotingPage = () => {
       setProcessingMessage('Sending OTP...');
       setProcessingSubMessage('A 6-digit code will be sent to your registered email');
       const response = await api.post('/otp/send', { faceVerifiedToken, electionId });
+      setMaskedEmail(response.data.email);
+      setOtpSent(true);
       toast.success(`OTP sent to ${response.data.email}`);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to send OTP');
+    } finally {
+      setProcessing(false);
+      setProcessingMessage('');
+      setProcessingSubMessage('');
+    }
+  };
+
+  const handleResendOTP = async () => {
+    try {
+      setProcessing(true);
+      setProcessingMessage('Resending OTP...');
+      setProcessingSubMessage('Sending a new code to your email');
+      const response = await api.post('/otp/send', { faceVerifiedToken, electionId });
+      setMaskedEmail(response.data.email);
+      toast.success(`OTP resent to ${response.data.email}`);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to resend OTP');
     } finally {
       setProcessing(false);
       setProcessingMessage('');
@@ -325,18 +346,43 @@ const VotingPage = () => {
           {/* Step 3: OTP */}
           {currentStep === 3 && (
             <div className="text-center">
-              <h2 className="text-3xl font-semibold mb-4">Enter OTP</h2>
-              <p className="text-slate-600 mb-8">A 6-digit code has been sent to your registered email</p>
-              
-              <button 
-                onClick={handleSendOTP} 
-                disabled={processing}
-                className="mb-8 px-8 py-3 bg-slate-900 text-white rounded-3xl font-medium"
-              >
-                {processing ? 'Sending...' : 'Resend OTP'}
-              </button>
+              <div className="text-5xl mb-4">📧</div>
+              <h2 className="text-3xl font-semibold mb-3">Email Verification</h2>
 
-              <OTPInput onComplete={handleVerifyOTP} loading={processing} />
+              {!otpSent ? (
+                <>
+                  <p className="text-slate-600 mb-2">Face verified! Send a 6-digit OTP to your registered email.</p>
+                  {maskedEmail && (
+                    <p className="text-emerald-700 font-mono font-semibold text-lg mb-6">{maskedEmail}</p>
+                  )}
+                  {!maskedEmail && (
+                    <p className="text-slate-500 text-sm mb-6">Your registered email address</p>
+                  )}
+                  <button
+                    onClick={handleSendOTP}
+                    disabled={processing}
+                    className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white px-12 py-4 rounded-3xl font-semibold text-lg transition-all"
+                  >
+                    {processing ? 'Sending...' : 'Send OTP to My Email'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-slate-600 mb-2">OTP sent to</p>
+                  <p className="text-emerald-700 font-mono font-semibold text-lg mb-6">{maskedEmail}</p>
+                  <p className="text-slate-500 text-sm mb-6">Enter the 6-digit code below</p>
+
+                  <OTPInput onComplete={handleVerifyOTP} loading={processing} />
+
+                  <button
+                    onClick={handleResendOTP}
+                    disabled={processing}
+                    className="mt-6 px-8 py-3 border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-3xl font-medium text-sm transition-all"
+                  >
+                    {processing ? 'Sending...' : '🔄 Resend OTP'}
+                  </button>
+                </>
+              )}
             </div>
           )}
 
