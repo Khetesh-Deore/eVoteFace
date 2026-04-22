@@ -14,8 +14,8 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-DEEPFACE_MODEL = os.getenv('DEEPFACE_MODEL', 'ArcFace')
-DEEPFACE_DETECTOR = os.getenv('DEEPFACE_DETECTOR', 'retinaface')
+DEEPFACE_MODEL = os.getenv('DEEPFACE_MODEL', 'Facenet')
+DEEPFACE_DETECTOR = os.getenv('DEEPFACE_DETECTOR', 'opencv')
 FACE_MATCH_THRESHOLD = float(os.getenv('FACE_MATCH_THRESHOLD', '0.68'))
 
 def base64_to_numpy(base64_string):
@@ -73,7 +73,9 @@ def verify():
             img2_path=registered_img_array,
             model_name=DEEPFACE_MODEL,
             detector_backend=DEEPFACE_DETECTOR,
-            enforce_detection=True
+            enforce_detection=True,
+            align=True,
+            normalization='base'
         )
         
         # Extract results
@@ -117,4 +119,13 @@ def verify():
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 8000))
+    # Warm up DeepFace model on startup to avoid first-request timeout
+    print("Warming up DeepFace model...")
+    try:
+        import numpy as np
+        dummy = np.zeros((100, 100, 3), dtype=np.uint8)
+        DeepFace.represent(dummy, model_name=DEEPFACE_MODEL, detector_backend=DEEPFACE_DETECTOR, enforce_detection=False)
+        print("DeepFace model ready.")
+    except Exception as e:
+        print(f"Warmup note: {e}")
     app.run(host='0.0.0.0', port=port, debug=False)

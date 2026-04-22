@@ -14,8 +14,21 @@ export default function WebcamCapture({ onCapture, loading = false, disabled = f
   const capture = useCallback(() => {
     const screenshot = webcamRef.current?.getScreenshot();
     if (screenshot) {
-      setPreview(screenshot);
-      onCapture(screenshot);
+      // Compress image before sending to reduce payload size
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX = 480;
+        let w = img.width, h = img.height;
+        if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const compressed = canvas.toDataURL('image/jpeg', 0.6);
+        setPreview(compressed);
+        onCapture(compressed);
+      };
+      img.src = screenshot;
     }
   }, [webcamRef, onCapture]);
 
@@ -47,9 +60,9 @@ export default function WebcamCapture({ onCapture, loading = false, disabled = f
           <Webcam
             ref={webcamRef}
             screenshotFormat="image/jpeg"
-            screenshotQuality={0.9}
+            screenshotQuality={0.7}
             className="w-full rounded-lg border-2 border-gray-300"
-            videoConstraints={{ facingMode: "user", width: 640, height: 480 }}
+            videoConstraints={{ facingMode: "user", width: 480, height: 360 }}
             onUserMediaError={() => setCameraError(true)}
           />
           {/* Face guide overlay */}
