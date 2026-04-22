@@ -64,8 +64,8 @@ export default function Register() {
   return (
     <>
       <LoadingModal isOpen={loading} message={loadingMessage} subMessage="Setting up your voter profile" />
-      <div className="min-h-screen bg-slate-50 py-12 px-4">
-      <div className="max-w-3xl mx-auto">
+      <div className="min-h-screen bg-slate-50 py-5 px-4">
+      <div className="max-w-xl mx-auto">
         {/* Header */}
         <div className="text-center mb-10">
           <div className="flex justify-center mb-6">

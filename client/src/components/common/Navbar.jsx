@@ -33,7 +33,7 @@ export default function Navbar() {
 
   return (
     <nav className="bg-slate-950 border-b border-slate-800 sticky top-0 z-50 shadow-xl">
-      <div className="max-w-screen-2xl mx-auto px-6 py-5 flex items-center justify-between">
+      <div className="max-w-screen-2xl mx-auto px-6 py-3 flex items-center justify-between">
         
         {/* Logo - Premium Voting Theme */}
         <Link 
@@ -142,7 +142,7 @@ export default function Navbar() {
               {navLink("/dashboard", "My Dashboard", "🏠")}
               {navLink("/elections", "Vote Now", "🗳️")}
               
-              <div className="mt-6 mb-4 px-4 py-4 bg-slate-900 rounded-3xl border border-slate-700 flex items-center gap-4">
+              <div className="mt-6 mb-4 px-4 py-2.5 bg-slate-900 rounded-3xl border border-slate-700 flex items-center gap-4">
                 <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-2xl font-bold">
                   {user?.name?.charAt(0) || "👤"}
                 </div>
@@ -154,7 +154,7 @@ export default function Navbar() {
 
               <button
                 onClick={handleLogout}
-                className="w-full py-4 text-red-400 hover:bg-red-500/10 rounded-3xl flex items-center justify-center gap-3 font-medium"
+                className="w-full py-2.5 text-red-400 hover:bg-red-500/10 rounded-3xl flex items-center justify-center gap-3 font-medium"
               >
                 <i className="fa-solid fa-right-from-bracket"></i>
                 Logout

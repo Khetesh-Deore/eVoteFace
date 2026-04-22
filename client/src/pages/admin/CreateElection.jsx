@@ -62,8 +62,8 @@ const CreateElection = () => {
   return (
     <>
       <LoadingModal isOpen={loading} message={loadingMessage} subMessage={loadingSubMessage} />
-      <div className="min-h-screen bg-slate-50 py-12 px-6">
-        <div className="max-w-2xl mx-auto">
+      <div className="min-h-screen bg-slate-50 py-5 px-4">
+        <div className="max-w-lg mx-auto">
           
           {/* Header */}
           <div className="text-center mb-12">
@@ -209,3 +209,4 @@ const CreateElection = () => {
 };
 
 export default CreateElection;
+

@@ -58,8 +58,8 @@ const AdminElectionsList = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10 px-6">
-      <div className="max-w-screen-2xl mx-auto">
+    <div className="min-h-screen bg-slate-50 py-5 px-4">
+      <div className="max-w-6xl mx-auto">
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">

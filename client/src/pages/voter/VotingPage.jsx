@@ -242,8 +242,8 @@ const VotingPage = () => {
   return (
     <>
       <LoadingModal isOpen={processing} message={processingMessage} subMessage={processingSubMessage} />
-      <div className="min-h-screen bg-slate-50 py-12 px-6">
-      <div className="max-w-3xl mx-auto">
+      <div className="min-h-screen bg-slate-50 py-5 px-4">
+      <div className="max-w-2xl mx-auto">
         
         {/* Header */}
         <div className="text-center mb-12">
@@ -268,7 +268,7 @@ const VotingPage = () => {
               { num: 5, label: 'Done', icon: '✅' }
             ].map((step, index) => (
               <div key={step.num} className="flex flex-col items-center relative flex-1">
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl transition-all duration-300 border-4 border-white shadow-sm
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-lg transition-all duration-300 border-4 border-white shadow-sm
                   ${currentStep >= step.num 
                     ? 'bg-emerald-600 text-white scale-110' 
                     : 'bg-slate-100 text-slate-400'}`}>
@@ -469,3 +469,4 @@ const VotingPage = () => {
 };
 
 export default VotingPage;
+

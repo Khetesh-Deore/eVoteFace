@@ -185,8 +185,8 @@ const ManageElection = () => {
   return (
     <>
       <LoadingModal isOpen={changingPhase} message="Changing election phase..." subMessage="Updating smart contract on Ethereum Sepolia" />
-    <div className="min-h-screen bg-slate-50 py-10 px-6">
-      <div className="max-w-screen-2xl mx-auto">
+    <div className="min-h-screen bg-slate-50 py-5 px-4">
+      <div className="max-w-6xl mx-auto">
         
         {/* Header */}
         <div className="mb-10">
@@ -417,7 +417,7 @@ const CandidatesTab = ({ election, candidates, onAddCandidate, onRemoveCandidate
     )}
 
     <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-      <div className="px-8 py-6 border-b">
+      <div className="px-5 py-4 border-b">
         <h2 className="text-2xl font-semibold">Registered Candidates</h2>
       </div>
       {candidates.length === 0 ? (
@@ -425,7 +425,7 @@ const CandidatesTab = ({ election, candidates, onAddCandidate, onRemoveCandidate
       ) : (
         <div className="divide-y divide-slate-100">
           {candidates.map((candidate) => (
-            <div key={candidate._id} className="px-8 py-6 flex items-center justify-between hover:bg-slate-50">
+            <div key={candidate._id} className="px-5 py-4 flex items-center justify-between hover:bg-slate-50">
               <div className="flex items-center gap-6">
                 <img src={candidate.partySymbol} alt={candidate.partyName} className="w-20 h-20 object-cover rounded-2xl border" />
                 <div>
@@ -486,7 +486,7 @@ const VotersTab = ({ election, voters, onApproveVoter, onUploadFace, onRegisterO
 
   return (
     <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-      <div className="px-8 py-6 border-b flex justify-between items-center">
+      <div className="px-5 py-4 border-b flex justify-between items-center">
         <h2 className="text-2xl font-semibold">Voter Management</h2>
         {election.phase !== 'registration' && (
           <div className="text-amber-600 text-sm font-medium">Only available in Registration phase</div>
@@ -500,35 +500,35 @@ const VotersTab = ({ election, voters, onApproveVoter, onUploadFace, onRegisterO
           <table className="min-w-full">
             <thead>
               <tr className="bg-slate-50 border-b">
-                <th className="px-8 py-5 text-left text-xs font-semibold text-slate-500 uppercase">Voter Details</th>
-                <th className="px-8 py-5 text-left text-xs font-semibold text-slate-500 uppercase">Status</th>
-                <th className="px-8 py-5 text-left text-xs font-semibold text-slate-500 uppercase">Face Verification</th>
-                <th className="px-8 py-5 text-left text-xs font-semibold text-slate-500 uppercase">Blockchain Status</th>
-                <th className="px-8 py-5 text-right text-xs font-semibold text-slate-500 uppercase">Actions</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Voter Details</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Status</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Face Verification</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Blockchain Status</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {voters.map((voter) => (
                 <tr key={voter._id} className="hover:bg-slate-50">
-                  <td className="px-8 py-6">
+                  <td className="px-5 py-4">
                     <div className="font-medium">{voter.fullName}</div>
                     <div className="text-sm text-slate-600">{voter.email}</div>
                   </td>
-                  <td className="px-8 py-6">
+                  <td className="px-5 py-4">
                     {voter.electionData?.isVerified ? (
                       <span className="px-4 py-1 bg-emerald-100 text-emerald-700 rounded-3xl text-xs font-medium">Approved</span>
                     ) : (
                       <span className="px-4 py-1 bg-amber-100 text-amber-700 rounded-3xl text-xs font-medium">Pending</span>
                     )}
                   </td>
-                  <td className="px-8 py-6">
+                  <td className="px-5 py-4">
                     {voter.electionData?.facePhotoUrl ? (
                       <span className="text-emerald-600 text-sm">✓ Verified</span>
                     ) : (
                       <button onClick={() => setFaceUploadModal({ userId: voter._id })} className="text-emerald-600 hover:underline text-sm">Upload Face</button>
                     )}
                   </td>
-                  <td className="px-8 py-6 text-sm">
+                  <td className="px-5 py-4 text-sm">
                     {voter.electionData?.isRegisteredOnChain ? (
                       <span className="text-emerald-600">Registered on Blockchain</span>
                     ) : voter.electionData?.isVerified && election.phase === 'registration' ? (
@@ -537,7 +537,7 @@ const VotersTab = ({ election, voters, onApproveVoter, onUploadFace, onRegisterO
                       <span className="text-slate-400">Pending</span>
                     )}
                   </td>
-                  <td className="px-8 py-6 text-right space-x-4">
+                  <td className="px-5 py-4 text-right space-x-4">
                     {!voter.electionData?.isVerified && (
                       <button onClick={() => onApproveVoter(voter._id)} className="text-emerald-600 hover:underline">Approve</button>
                     )}
@@ -685,7 +685,7 @@ const ResultsTab = ({ results }) => {
       </div>
 
       {results.winner && (
-        <div className="bg-gradient-to-br from-yellow-400 to-amber-500 text-white rounded-3xl p-10">
+        <div className="bg-gradient-to-br from-green-400 to-green-500 text-white rounded-3xl p-10">
           <div className="flex items-center gap-4">
             <span className="text-6xl">🏆</span>
             <div>
@@ -698,17 +698,17 @@ const ResultsTab = ({ results }) => {
       )}
 
       <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="px-8 py-6 border-b">
+        <div className="px-5 py-4 border-b">
           <h2 className="text-2xl font-semibold">Detailed Vote Count</h2>
         </div>
         <table className="w-full">
           <thead>
             <tr className="bg-slate-50">
-              <th className="px-8 py-5 text-left">Rank</th>
-              <th className="px-8 py-5 text-left">Candidate</th>
-              <th className="px-8 py-5 text-left">Party</th>
-              <th className="px-8 py-5 text-right">Votes</th>
-              <th className="px-8 py-5 text-right">Percentage</th>
+              <th className="px-5 py-3 text-left">Rank</th>
+              <th className="px-5 py-3 text-left">Candidate</th>
+              <th className="px-5 py-3 text-left">Party</th>
+              <th className="px-5 py-3 text-right">Votes</th>
+              <th className="px-5 py-3 text-right">Percentage</th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -718,11 +718,11 @@ const ResultsTab = ({ results }) => {
                 : 0;
               return (
                 <tr key={c.id} className="hover:bg-slate-50">
-                  <td className="px-8 py-6 font-medium">#{i+1}</td>
-                  <td className="px-8 py-6 font-medium">{c.name}</td>
-                  <td className="px-8 py-6 text-slate-600">{c.party}</td>
-                  <td className="px-8 py-6 text-right font-semibold">{c.voteCount}</td>
-                  <td className="px-8 py-6 text-right text-emerald-600 font-medium">{perc}%</td>
+                  <td className="px-5 py-4 font-medium">#{i+1}</td>
+                  <td className="px-5 py-4 font-medium">{c.name}</td>
+                  <td className="px-5 py-4 text-slate-600">{c.party}</td>
+                  <td className="px-5 py-4 text-right font-semibold">{c.voteCount}</td>
+                  <td className="px-5 py-4 text-right text-emerald-600 font-medium">{perc}%</td>
                 </tr>
               );
             })}
@@ -734,3 +734,4 @@ const ResultsTab = ({ results }) => {
 };
 
 export default ManageElection;
+

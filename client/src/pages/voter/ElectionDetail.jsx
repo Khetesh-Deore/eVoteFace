@@ -134,8 +134,8 @@ const ElectionDetail = () => {
   return (
     <>
       <LoadingModal isOpen={requestingRegistration} message={actionMessage} subMessage="Your request will be reviewed by the admin" />
-      <div className="min-h-screen bg-slate-50 py-10 px-6">
-      <div className="max-w-screen-2xl mx-auto">
+      <div className="min-h-screen bg-slate-50 py-5 px-4">
+      <div className="max-w-6xl mx-auto">
         
         {/* Back Button */}
         <button
@@ -329,7 +329,7 @@ const ElectionDetail = () => {
             </div>
 
             {results.winner && election.phase === 'completed' && (
-              <div className="bg-gradient-to-br from-amber-400 to-yellow-500 text-white rounded-3xl p-10 mb-10">
+              <div className="bg-gradient-to-br from-green-400 to-green-500 text-white rounded-3xl p-10 mb-10">
                 <div className="flex items-center gap-6">
                   <span className="text-7xl">🏆</span>
                   <div>
