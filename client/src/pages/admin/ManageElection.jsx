@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Webcam from 'react-webcam';
 import api from '../../utils/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import LoadingModal from '../../components/common/LoadingModal';
 import { toast } from 'react-toastify';
 
 const ManageElection = () => {
@@ -15,6 +16,7 @@ const ManageElection = () => {
   const [voters, setVoters] = useState([]);
   const [results, setResults] = useState(null);
   const [addingCandidate, setAddingCandidate] = useState(false);
+  const [changingPhase, setChangingPhase] = useState(false);
 
   useEffect(() => {
     fetchElectionData();
@@ -77,11 +79,14 @@ const ManageElection = () => {
     if (!window.confirm(`Change phase to "${newPhase}"?`)) return;
 
     try {
+      setChangingPhase(true);
       await api.post(`/admin/elections/${electionId}/phase`, { phase: newPhase });
       toast.success('Phase updated successfully');
       fetchElectionData();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to change phase');
+    } finally {
+      setChangingPhase(false);
     }
   };
 
@@ -178,6 +183,8 @@ const ManageElection = () => {
   if (!election) return null;
 
   return (
+    <>
+      <LoadingModal isOpen={changingPhase} message="Changing election phase..." subMessage="Updating smart contract on Ethereum Sepolia" />
     <div className="min-h-screen bg-slate-50 py-10 px-6">
       <div className="max-w-screen-2xl mx-auto">
         
@@ -225,6 +232,7 @@ const ManageElection = () => {
             election={election} 
             onPhaseChange={handlePhaseChange}
             getPhaseColor={getPhaseColor}
+            changingPhase={changingPhase}
           />
         )}
 
@@ -252,13 +260,14 @@ const ManageElection = () => {
         {activeTab === 'results' && <ResultsTab results={results} />}
       </div>
     </div>
+    </>
   );
 };
 
 /* ====================== SUB COMPONENTS ====================== */
 
 // Overview Tab
-const OverviewTab = ({ election, onPhaseChange, getPhaseColor }) => (
+const OverviewTab = ({ election, onPhaseChange, getPhaseColor, changingPhase }) => (
   <div className="space-y-8">
     {/* Phase Control */}
     <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
@@ -281,24 +290,54 @@ const OverviewTab = ({ election, onPhaseChange, getPhaseColor }) => (
       <div className="flex flex-wrap gap-3">
         <button
           onClick={() => onPhaseChange('registration')}
-          disabled={election.phase === 'registration'}
-          className="px-8 py-3 bg-blue-600 text-white rounded-3xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+          disabled={election.phase === 'registration' || changingPhase}
+          className="px-8 py-3 bg-blue-600 text-white rounded-3xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center gap-2"
         >
-          Set to Registration
+          {changingPhase ? (
+            <>
+              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Changing Phase...
+            </>
+          ) : (
+            'Set to Registration'
+          )}
         </button>
         <button
           onClick={() => onPhaseChange('voting')}
-          disabled={election.phase === 'voting'}
-          className="px-8 py-3 bg-emerald-600 text-white rounded-3xl hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+          disabled={election.phase === 'voting' || changingPhase}
+          className="px-8 py-3 bg-emerald-600 text-white rounded-3xl hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center gap-2"
         >
-          Start Voting Phase
+          {changingPhase ? (
+            <>
+              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Starting Voting...
+            </>
+          ) : (
+            'Start Voting Phase'
+          )}
         </button>
         <button
           onClick={() => onPhaseChange('completed')}
-          disabled={election.phase === 'completed'}
-          className="px-8 py-3 bg-slate-700 text-white rounded-3xl hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+          disabled={election.phase === 'completed' || changingPhase}
+          className="px-8 py-3 bg-slate-700 text-white rounded-3xl hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center gap-2"
         >
-          Mark as Completed
+          {changingPhase ? (
+            <>
+              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Completing...
+            </>
+          ) : (
+            'Mark as Completed'
+          )}
         </button>
       </div>
     </div>
