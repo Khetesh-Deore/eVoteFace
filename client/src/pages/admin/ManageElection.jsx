@@ -148,14 +148,19 @@ const ManageElection = () => {
     }
   };
 
+  const [registeringOnChain, setRegisteringOnChain] = useState(null); // stores userId being registered
+
   const handleRegisterOnChain = async (userId, walletAddress) => {
     try {
+      setRegisteringOnChain(userId);
       await api.post(`/admin/elections/${electionId}/voters/${userId}/register-onchain`, { walletAddress });
       toast.success('Voter registered on blockchain');
       fetchVoters();
       fetchElectionData();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to register on-chain');
+    } finally {
+      setRegisteringOnChain(null);
     }
   };
 
@@ -258,6 +263,7 @@ const ManageElection = () => {
             onUploadFace={handleUploadFace}
             onRegisterOnChain={handleRegisterOnChain}
             onRemoveVoter={handleRemoveVoter}
+            registeringOnChain={registeringOnChain}
           />
         )}
 
@@ -457,7 +463,7 @@ const CandidatesTab = ({ election, candidates, onAddCandidate, onRemoveCandidate
 );
 
 // Voters Tab (with Face Upload Modal)
-const VotersTab = ({ election, voters, onApproveVoter, onUploadFace, onRegisterOnChain, onRemoveVoter }) => {
+const VotersTab = ({ election, voters, onApproveVoter, onUploadFace, onRegisterOnChain, onRemoveVoter, registeringOnChain }) => {
   const [faceUploadModal, setFaceUploadModal] = useState(null);
   const [uploadMethod, setUploadMethod] = useState('file');
   const [capturedImage, setCapturedImage] = useState(null);
@@ -492,6 +498,12 @@ const VotersTab = ({ election, voters, onApproveVoter, onUploadFace, onRegisterO
 
   return (
     <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+      {/* Blockchain registration loading modal */}
+      <LoadingModal
+        isOpen={!!registeringOnChain}
+        message="Registering voter on blockchain..."
+        subMessage="Sending transaction to Ethereum Sepolia — please wait"
+      />
       <div className="px-5 py-4 border-b flex justify-between items-center">
         <h2 className="text-2xl font-semibold">Voter Management</h2>
         {election.phase !== 'registration' && (
@@ -536,11 +548,32 @@ const VotersTab = ({ election, voters, onApproveVoter, onUploadFace, onRegisterO
                   </td>
                   <td className="px-5 py-4 text-sm">
                     {voter.electionData?.isRegisteredOnChain ? (
-                      <span className="text-emerald-600">Registered on Blockchain</span>
+                      <span className="text-emerald-600 flex items-center gap-1 text-sm">
+                        <i className="fa-solid fa-circle-check"></i> On Blockchain
+                      </span>
                     ) : voter.electionData?.isVerified && election.phase === 'registration' ? (
-                      <button onClick={() => onRegisterOnChain(voter._id, voter.electionData.walletAddress)} className="text-blue-600 hover:underline">Register On-Chain</button>
+                      <button
+                        onClick={() => onRegisterOnChain(voter._id, voter.electionData.walletAddress)}
+                        disabled={!!registeringOnChain}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      >
+                        {registeringOnChain === voter._id ? (
+                          <>
+                            <svg className="animate-spin h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                            </svg>
+                            Adding on chain...
+                          </>
+                        ) : (
+                          <>
+                            <i className="fa-brands fa-ethereum text-xs"></i>
+                            Register On-Chain
+                          </>
+                        )}
+                      </button>
                     ) : (
-                      <span className="text-slate-400">Pending</span>
+                      <span className="text-slate-400 text-sm">Pending</span>
                     )}
                   </td>
                   <td className="px-5 py-4 text-right space-x-4">
