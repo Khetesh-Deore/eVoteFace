@@ -3,9 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { toast } from 'react-toastify';
+import { useAuth } from '../../context/AuthContext';
 
 const AdminElectionsList = () => {
   const navigate = useNavigate();
+  const { isSuperAdmin } = useAuth();
   const [elections, setElections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -70,6 +72,7 @@ const AdminElectionsList = () => {
             <p className="text-slate-600 mt-2 text-lg">Oversee all elections, phases, and performance</p>
           </div>
 
+          {isSuperAdmin && (
           <Link
             to="/admin/elections/new"
             className="inline-flex items-center gap-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-8 py-4 rounded-3xl transition-all active:scale-95 shadow-lg"
@@ -77,6 +80,7 @@ const AdminElectionsList = () => {
             <i className="fa-solid fa-plus text-xl"></i>
             Create New Election
           </Link>
+          )}
         </div>
 
         {/* Filter Tabs */}
@@ -118,7 +122,7 @@ const AdminElectionsList = () => {
                   : `There are currently no elections in the ${filter} phase.`
                 }
               </p>
-              {filter === 'all' && (
+              {filter === 'all' && isSuperAdmin && (
                 <Link
                   to="/admin/elections/new"
                   className="mt-8 inline-flex items-center gap-3 bg-emerald-600 text-white px-8 py-4 rounded-3xl font-semibold hover:bg-emerald-700 transition-all"

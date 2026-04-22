@@ -4,13 +4,13 @@ const Election = require('../models/Election');
 const Candidate = require('../models/Candidate');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
-const adminAuth = require('../middleware/adminAuth');
+const { superAdminOnly, adminAuth } = require('../middleware/adminAuth');
 const { getFactoryContract, getElectionContract, getElectionContractReadOnly, ADMIN_WALLET_ADDRESS } = require('../utils/blockchain');
 
 // @route   POST /api/admin/elections
 // @desc    Create new election (deploys contract via factory)
-// @access  Private/Admin
-router.post('/admin/elections', auth, adminAuth, async (req, res) => {
+// @access  Private/SuperAdmin
+router.post('/admin/elections', auth, superAdminOnly, async (req, res) => {
   try {
     const { title, description, startTime, endTime } = req.body;
 
@@ -78,7 +78,7 @@ router.post('/admin/elections', auth, adminAuth, async (req, res) => {
 
 // @route   GET /api/admin/elections
 // @desc    Get all elections (admin view)
-// @access  Private/Admin
+// @access  Private/Admin (both roles)
 router.get('/admin/elections', auth, adminAuth, async (req, res) => {
   try {
     const elections = await Election.find()
@@ -171,8 +171,8 @@ router.get('/elections/:electionId', async (req, res) => {
 
 // @route   POST /api/admin/elections/:electionId/phase
 // @desc    Change election phase (with reset support)
-// @access  Private/Admin
-router.post('/admin/elections/:electionId/phase', auth, adminAuth, async (req, res) => {
+// @access  Private/SuperAdmin
+router.post('/admin/elections/:electionId/phase', auth, superAdminOnly, async (req, res) => {
   try {
     const { phase } = req.body;
 
@@ -286,7 +286,7 @@ router.post('/admin/elections/:electionId/phase', auth, adminAuth, async (req, r
 
 // @route   GET /api/admin/elections/:electionId/results
 // @desc    Get election results (admin view)
-// @access  Private/Admin
+// @access  Private/Admin (both roles)
 router.get('/admin/elections/:electionId/results', auth, adminAuth, async (req, res) => {
   try {
     const election = await Election.findById(req.params.electionId);

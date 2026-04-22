@@ -3,16 +3,16 @@ const router = express.Router();
 const Election = require('../models/Election');
 const Candidate = require('../models/Candidate');
 const auth = require('../middleware/auth');
-const adminAuth = require('../middleware/adminAuth');
+const { superAdminOnly, adminAuth } = require('../middleware/adminAuth');
 const { uploadPartySymbol } = require('../middleware/uploadCloudinary');
 const { getElectionContract } = require('../utils/blockchain');
 
 // @route   POST /api/admin/elections/:electionId/candidates
 // @desc    Add candidate to election (upload symbol to Cloudinary, register on contract)
-// @access  Private/Admin
+// @access  Private/SuperAdmin
 router.post('/admin/elections/:electionId/candidates',
   auth,
-  adminAuth,
+  superAdminOnly,
   uploadPartySymbol.single('partySymbol'),
   async (req, res) => {
     try {
@@ -83,7 +83,7 @@ router.post('/admin/elections/:electionId/candidates',
 
 // @route   GET /api/admin/elections/:electionId/candidates
 // @desc    Get all candidates for specific election
-// @access  Private/Admin
+// @access  Private/Admin (both roles)
 router.get('/admin/elections/:electionId/candidates', auth, adminAuth, async (req, res) => {
   try {
     const { electionId } = req.params;
@@ -105,8 +105,8 @@ router.get('/admin/elections/:electionId/candidates', auth, adminAuth, async (re
 
 // @route   DELETE /api/admin/elections/:electionId/candidates/:candidateId
 // @desc    Remove candidate from election
-// @access  Private/Admin
-router.delete('/admin/elections/:electionId/candidates/:candidateId', auth, adminAuth, async (req, res) => {
+// @access  Private/SuperAdmin
+router.delete('/admin/elections/:electionId/candidates/:candidateId', auth, superAdminOnly, async (req, res) => {
   try {
     const { electionId, candidateId } = req.params;
 

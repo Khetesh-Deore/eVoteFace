@@ -23,10 +23,16 @@ export default function Login() {
         ? { email: form.email, password: form.password }
         : { voterID: form.voterID, password: form.password };
       
-      await login(credentials, isAdmin);
+      const userInfo = await login(credentials, isAdmin);
       
       toast.success(`Welcome back!`);
-      navigate(isAdmin ? "/admin/dashboard" : "/dashboard");
+      if (userInfo.role === 'superadmin') {
+        navigate("/admin/dashboard");
+      } else if (userInfo.role === 'admin') {
+        navigate("/voter-admin/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err) {
       toast.error(err.response?.data?.message || "Login failed");
     } finally {

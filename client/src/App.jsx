@@ -7,6 +7,7 @@ import Navbar from './components/common/Navbar';
 import Footer from './components/common/Footer';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import AdminRoute from './components/common/AdminRoute';
+import SuperAdminRoute from './components/common/SuperAdminRoute';
 
 // Public Pages
 import Home from './pages/Home';
@@ -22,6 +23,7 @@ import Results from './pages/voter/Results';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
+import VoterAdminDashboard from './pages/admin/VoterAdminDashboard';
 import AdminElectionsList from './pages/admin/AdminElectionsList';
 import CreateElection from './pages/admin/CreateElection';
 import ManageElection from './pages/admin/ManageElection';
@@ -41,12 +43,30 @@ function App() {
           <Route path="/elections/:electionId" element={<ElectionDetail />} />
           <Route path="/elections/:electionId/results" element={<Results />} />
           
-          {/* Admin Routes */}
+          {/* Super Admin Routes */}
           <Route
             path="/admin/dashboard"
             element={
-              <AdminRoute>
+              <SuperAdminRoute>
                 <AdminDashboard />
+              </SuperAdminRoute>
+            }
+          />
+          <Route
+            path="/admin/elections/new"
+            element={
+              <SuperAdminRoute>
+                <CreateElection />
+              </SuperAdminRoute>
+            }
+          />
+
+          {/* Admin Routes (both roles) */}
+          <Route
+            path="/voter-admin/dashboard"
+            element={
+              <AdminRoute>
+                <VoterAdminDashboard />
               </AdminRoute>
             }
           />
@@ -55,14 +75,6 @@ function App() {
             element={
               <AdminRoute>
                 <AdminElectionsList />
-              </AdminRoute>
-            }
-          />
-          <Route
-            path="/admin/elections/new"
-            element={
-              <AdminRoute>
-                <CreateElection />
               </AdminRoute>
             }
           />

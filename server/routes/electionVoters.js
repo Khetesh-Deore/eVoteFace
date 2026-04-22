@@ -3,14 +3,14 @@ const router = express.Router();
 const Election = require('../models/Election');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
-const adminAuth = require('../middleware/adminAuth');
+const { voterAdminOnly } = require('../middleware/adminAuth');
 const { uploadVoterFace } = require('../middleware/uploadCloudinary');
 const { getElectionContract } = require('../utils/blockchain');
 
 // @route   GET /api/admin/elections/:electionId/voters
 // @desc    Get all voters for specific election
 // @access  Private/Admin
-router.get('/admin/elections/:electionId/voters', auth, adminAuth, async (req, res) => {
+router.get('/admin/elections/:electionId/voters', auth, voterAdminOnly, async (req, res) => {
   try {
     const election = await Election.findById(req.params.electionId);
 
@@ -51,7 +51,7 @@ router.get('/admin/elections/:electionId/voters', auth, adminAuth, async (req, r
 // @route   POST /api/admin/elections/:electionId/voters/:userId/approve
 // @desc    Approve voter for specific election
 // @access  Private/Admin
-router.post('/admin/elections/:electionId/voters/:userId/approve', auth, adminAuth, async (req, res) => {
+router.post('/admin/elections/:electionId/voters/:userId/approve', auth, voterAdminOnly, async (req, res) => {
   try {
     const { electionId, userId } = req.params;
 
@@ -100,7 +100,7 @@ router.post('/admin/elections/:electionId/voters/:userId/approve', auth, adminAu
 // @route   POST /api/admin/elections/:electionId/voters/:userId/register-onchain
 // @desc    Register voter's wallet on election contract
 // @access  Private/Admin
-router.post('/admin/elections/:electionId/voters/:userId/register-onchain', auth, adminAuth, async (req, res) => {
+router.post('/admin/elections/:electionId/voters/:userId/register-onchain', auth, voterAdminOnly, async (req, res) => {
   try {
     const { electionId, userId } = req.params;
     const { walletAddress } = req.body;
@@ -215,10 +215,10 @@ router.post('/admin/elections/:electionId/voters/:userId/register-onchain', auth
 
 // @route   POST /api/admin/elections/:electionId/voters/:userId/face
 // @desc    Upload voter face photo to Cloudinary
-// @access  Private/Admin
+// @access  Private/VoterAdmin (both roles)
 router.post('/admin/elections/:electionId/voters/:userId/face', 
   auth, 
-  adminAuth, 
+  voterAdminOnly, 
   uploadVoterFace.single('facePhoto'),
   async (req, res) => {
     try {
@@ -265,7 +265,7 @@ router.post('/admin/elections/:electionId/voters/:userId/face',
 // @route   DELETE /api/admin/elections/:electionId/voters/:userId
 // @desc    Remove voter from election
 // @access  Private/Admin
-router.delete('/admin/elections/:electionId/voters/:userId', auth, adminAuth, async (req, res) => {
+router.delete('/admin/elections/:electionId/voters/:userId', auth, voterAdminOnly, async (req, res) => {
   try {
     const { electionId, userId } = req.params;
 

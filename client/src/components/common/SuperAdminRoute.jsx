@@ -2,13 +2,14 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import LoadingSpinner from "./LoadingSpinner";
 
-// Allows both 'admin' (voter admin) and 'superadmin'
-export default function AdminRoute({ children }) {
-  const { user, token, isAdmin, loading } = useAuth();
+export default function SuperAdminRoute({ children }) {
+  const { user, token, isSuperAdmin, loading } = useAuth();
 
   if (loading) return <LoadingSpinner />;
   if (!token || !user) return <Navigate to="/login" replace />;
-  if (!isAdmin) return <Navigate to="/dashboard" replace />;
+
+  // Voter admin gets redirected to their own dashboard
+  if (!isSuperAdmin) return <Navigate to="/voter-admin/dashboard" replace />;
 
   return children;
 }

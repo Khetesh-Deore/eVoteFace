@@ -5,10 +5,12 @@ import api from '../../utils/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import LoadingModal from '../../components/common/LoadingModal';
 import { toast } from 'react-toastify';
+import { useAuth } from '../../context/AuthContext';
 
 const ManageElection = () => {
   const { electionId } = useParams();
   const navigate = useNavigate();
+  const { isSuperAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [election, setElection] = useState(null);
@@ -233,6 +235,7 @@ const ManageElection = () => {
             onPhaseChange={handlePhaseChange}
             getPhaseColor={getPhaseColor}
             changingPhase={changingPhase}
+            isSuperAdmin={isSuperAdmin}
           />
         )}
 
@@ -243,6 +246,7 @@ const ManageElection = () => {
             onAddCandidate={handleAddCandidate}
             onRemoveCandidate={handleRemoveCandidate}
             addingCandidate={addingCandidate}
+            isSuperAdmin={isSuperAdmin}
           />
         )}
 
@@ -267,9 +271,10 @@ const ManageElection = () => {
 /* ====================== SUB COMPONENTS ====================== */
 
 // Overview Tab
-const OverviewTab = ({ election, onPhaseChange, getPhaseColor, changingPhase }) => (
+const OverviewTab = ({ election, onPhaseChange, getPhaseColor, changingPhase, isSuperAdmin }) => (
   <div className="space-y-8">
-    {/* Phase Control */}
+    {/* Phase Control — SuperAdmin only */}
+    {isSuperAdmin && (
     <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
       <h2 className="text-2xl font-semibold mb-6">Election Phase Control</h2>
       
@@ -341,6 +346,7 @@ const OverviewTab = ({ election, onPhaseChange, getPhaseColor, changingPhase }) 
         </button>
       </div>
     </div>
+    )}
 
     {/* Stats Cards */}
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -379,9 +385,9 @@ const OverviewTab = ({ election, onPhaseChange, getPhaseColor, changingPhase }) 
 );
 
 // Candidates Tab
-const CandidatesTab = ({ election, candidates, onAddCandidate, onRemoveCandidate, addingCandidate }) => (
+const CandidatesTab = ({ election, candidates, onAddCandidate, onRemoveCandidate, addingCandidate, isSuperAdmin }) => (
   <div className="space-y-8">
-    {election.phase === 'registration' && (
+    {isSuperAdmin && election.phase === 'registration' && (
       <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8">
         <h2 className="text-2xl font-semibold mb-6">Add New Candidate</h2>
         <form onSubmit={onAddCandidate} className="space-y-6">
@@ -434,7 +440,7 @@ const CandidatesTab = ({ election, candidates, onAddCandidate, onRemoveCandidate
                   <p className="text-xs text-slate-500 font-mono mt-1">On-chain ID: {candidate.onChainId}</p>
                 </div>
               </div>
-              {election.phase === 'registration' && (
+              {isSuperAdmin && election.phase === 'registration' && (
                 <button
                   onClick={() => onRemoveCandidate(candidate._id)}
                   className="px-6 py-3 text-red-600 hover:bg-red-50 rounded-2xl text-sm font-medium"

@@ -16,6 +16,8 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('evf_token'));
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isVoterAdmin, setIsVoterAdmin] = useState(false);
 
   // Login function
   const login = async (credentials, isAdminLogin = false) => {
@@ -31,6 +33,8 @@ export const AuthProvider = ({ children }) => {
       const userInfo = userData || adminData;
       setUser(userInfo);
       setIsAdmin(userInfo.role === 'admin' || userInfo.role === 'superadmin');
+      setIsSuperAdmin(userInfo.role === 'superadmin');
+      setIsVoterAdmin(userInfo.role === 'admin');
 
       return userInfo;
     } catch (error) {
@@ -43,6 +47,8 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setUser(null);
     setIsAdmin(false);
+    setIsSuperAdmin(false);
+    setIsVoterAdmin(false);
     localStorage.removeItem('evf_token');
   };
 
@@ -62,6 +68,8 @@ export const AuthProvider = ({ children }) => {
       const response = await api.get('/auth/me');
       setUser(response.data);
       setIsAdmin(response.data.role === 'admin' || response.data.role === 'superadmin');
+      setIsSuperAdmin(response.data.role === 'superadmin');
+      setIsVoterAdmin(response.data.role === 'admin');
       return response.data;
     } catch (error) {
       console.error('Get current user error:', error);
@@ -89,6 +97,8 @@ export const AuthProvider = ({ children }) => {
     token,
     loading,
     isAdmin,
+    isSuperAdmin,
+    isVoterAdmin,
     login,
     logout,
     register,

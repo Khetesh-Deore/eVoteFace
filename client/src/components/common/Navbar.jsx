@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 export default function Navbar() {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, isAdmin, isSuperAdmin, isVoterAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
@@ -69,8 +69,10 @@ export default function Navbar() {
             </>
           ) : isAdmin ? (
             <>
-              {navLink("/admin/dashboard", "Admin Dashboard", "📊")}
-              {navLink("/admin/elections", "Manage Elections", "⚙️")}
+              {isSuperAdmin && navLink("/admin/dashboard", "Dashboard", "📊")}
+              {isVoterAdmin && navLink("/voter-admin/dashboard", "Dashboard", "📊")}
+              {isSuperAdmin && navLink("/admin/elections", "Manage Elections", "⚙️")}
+              {isVoterAdmin && navLink("/admin/elections", "Elections", "🗳️")}
               <button
                 onClick={handleLogout}
                 className="ml-6 flex items-center gap-2 px-5 py-2.5 text-red-400 hover:bg-red-500/10 rounded-3xl transition-colors"
@@ -127,8 +129,10 @@ export default function Navbar() {
             </>
           ) : isAdmin ? (
             <>
-              {navLink("/admin/dashboard", "Admin Dashboard", "📊")}
-              {navLink("/admin/elections", "Manage Elections", "⚙️")}
+              {isSuperAdmin && navLink("/admin/dashboard", "Dashboard", "📊")}
+              {isVoterAdmin && navLink("/voter-admin/dashboard", "Dashboard", "📊")}
+              {isSuperAdmin && navLink("/admin/elections", "Manage Elections", "⚙️")}
+              {isVoterAdmin && navLink("/admin/elections", "Elections", "🗳️")}
               <button
                 onClick={handleLogout}
                 className="w-full text-left px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-2xl flex items-center gap-3 mt-4"

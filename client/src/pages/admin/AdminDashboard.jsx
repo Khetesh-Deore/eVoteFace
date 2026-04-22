@@ -97,7 +97,7 @@ const AdminDashboard = () => {
             
             <div className="hidden md:flex items-center gap-3 bg-white px-6 py-3 rounded-3xl border border-slate-100">
               <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium text-slate-600">LIVE SYSTEM</span>
+              <span className="text-sm font-medium text-slate-600">SUPER ADMIN</span>
             </div>
           </div>
         </div>
