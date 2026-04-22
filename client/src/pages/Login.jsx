@@ -2,11 +2,13 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
+import LoadingModal from "../components/common/LoadingModal";
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [form, setForm] = useState({ voterID: "", email: "", password: "" });
 
@@ -15,6 +17,7 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setLoadingMessage(isAdmin ? 'Verifying admin credentials...' : 'Logging you in...');
     try {
       const credentials = isAdmin 
         ? { email: form.email, password: form.password }
@@ -28,11 +31,14 @@ export default function Login() {
       toast.error(err.response?.data?.message || "Login failed");
     } finally {
       setLoading(false);
+      setLoadingMessage('');
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-12">
+    <>
+      <LoadingModal isOpen={loading} message={loadingMessage} subMessage="Please wait while we verify your credentials" />
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-lg">
         
         {/* Header */}
@@ -170,5 +176,6 @@ export default function Login() {
         </div>
       </div>
     </div>
+    </>
   );
 }

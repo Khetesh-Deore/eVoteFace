@@ -159,18 +159,29 @@ router.get('/results/:electionId', async (req, res) => {
 
     // Get total candidates
     const totalCandidates = await contract.totalCandidates();
+    console.log(`Total candidates for election ${electionId}:`, totalCandidates.toString());
 
     // Get all candidates with vote counts
     const candidates = [];
-    for (let i = 1; i <= totalCandidates; i++) {
-      const candidate = await contract.getCandidate(i);
-      candidates.push({
-        id: Number(candidate.id),
-        name: candidate.name,
-        party: candidate.partyName,
-        partySymbol: candidate.partySymbol,
-        voteCount: candidate.voteCount.toString()
-      });
+    const totalCandidatesNum = Number(totalCandidates);
+    
+    if (totalCandidatesNum > 0) {
+      for (let i = 1; i <= totalCandidatesNum; i++) {
+        try {
+          const candidate = await contract.getCandidate(i);
+          candidates.push({
+            id: Number(candidate.id),
+            name: candidate.name,
+            party: candidate.partyName,
+            partySymbol: candidate.partySymbol,
+            voteCount: candidate.voteCount.toString()
+          });
+        } catch (candidateError) {
+          console.error(`Error fetching candidate ${i}:`, candidateError.message);
+          // Skip this candidate if it doesn't exist
+          continue;
+        }
+      }
     }
 
     // Get total votes cast
@@ -180,17 +191,17 @@ router.get('/results/:electionId', async (req, res) => {
     let winner = null;
     const currentPhase = await contract.currentPhase();
     
-    if (currentPhase === 2) { // Completed phase
+    if (Number(currentPhase) === 2 && totalCandidatesNum > 0) { // Completed phase
       try {
         const winnerData = await contract.getWinner();
         winner = {
           id: Number(winnerData.id),
           name: winnerData.name,
-          party: winnerData.party,
+          party: winnerData.partyName,
           voteCount: winnerData.voteCount.toString()
         };
       } catch (error) {
-        console.error('Error getting winner:', error);
+        console.error('Error getting winner:', error.message);
       }
     }
 
@@ -208,7 +219,16 @@ router.get('/results/:electionId', async (req, res) => {
     });
   } catch (error) {
     console.error('Get results error:', error);
-    res.status(500).json({ message: 'Server error fetching results' });
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      reason: error.reason
+    });
+    
+    res.status(500).json({ 
+      message: 'Server error fetching results',
+      details: error.message 
+    });
   }
 });
 

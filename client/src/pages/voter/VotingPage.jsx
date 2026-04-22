@@ -8,6 +8,7 @@ import { getElectionContract } from '../../utils/contract';
 import WebcamCapture from '../../components/voter/WebcamCapture';
 import OTPInput from '../../components/voter/OTPInput';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import LoadingModal from '../../components/common/LoadingModal';
 import { toast } from 'react-toastify';
 
 const VotingPage = () => {
@@ -29,6 +30,8 @@ const VotingPage = () => {
   const [voteAuthToken, setVoteAuthToken] = useState(null);
   const [txHash, setTxHash] = useState(null);
   const [processing, setProcessing] = useState(false);
+  const [processingMessage, setProcessingMessage] = useState('');
+  const [processingSubMessage, setProcessingSubMessage] = useState('');
 
   useEffect(() => {
     loadElectionData();
@@ -93,6 +96,8 @@ const VotingPage = () => {
 
     try {
       setProcessing(true);
+      setProcessingMessage('Verifying your face...');
+      setProcessingSubMessage('Using AI to match your face with registered photo');
 
       const response = await api.post('/face/verify', {
         liveImageBase64: liveImage,
@@ -119,24 +124,32 @@ const VotingPage = () => {
       setLiveImage(null);
     } finally {
       setProcessing(false);
+      setProcessingMessage('');
+      setProcessingSubMessage('');
     }
   };
 
   const handleSendOTP = async () => {
     try {
       setProcessing(true);
+      setProcessingMessage('Sending OTP...');
+      setProcessingSubMessage('A 6-digit code will be sent to your registered email');
       const response = await api.post('/otp/send', { faceVerifiedToken, electionId });
       toast.success(`OTP sent to ${response.data.email}`);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to send OTP');
     } finally {
       setProcessing(false);
+      setProcessingMessage('');
+      setProcessingSubMessage('');
     }
   };
 
   const handleVerifyOTP = async (otpCode) => {
     try {
       setProcessing(true);
+      setProcessingMessage('Verifying OTP...');
+      setProcessingSubMessage('Checking your 6-digit code');
       const response = await api.post('/otp/verify', { code: otpCode, electionId });
       if (response.data.verified) {
         setVoteAuthToken(response.data.voteAuthToken);
@@ -147,6 +160,8 @@ const VotingPage = () => {
       toast.error(error.response?.data?.message || 'Invalid OTP');
     } finally {
       setProcessing(false);
+      setProcessingMessage('');
+      setProcessingSubMessage('');
     }
   };
 
@@ -158,13 +173,20 @@ const VotingPage = () => {
 
     try {
       setProcessing(true);
+      setProcessingMessage('Casting your vote...');
+      setProcessingSubMessage('Please confirm the transaction in MetaMask');
 
       const contract = await getElectionContract(election.contractAddress);
       const tx = await contract.castVote(selectedCandidate.onChainId);
-      toast.info('Transaction submitted. Waiting for confirmation...');
+      
+      setProcessingMessage('Transaction submitted');
+      setProcessingSubMessage('Waiting for blockchain confirmation...');
 
       const receipt = await tx.wait();
       const transactionHash = receipt.hash;
+
+      setProcessingMessage('Recording vote...');
+      setProcessingSubMessage('Updating database records');
 
       await api.post('/votes/record', {
         electionId,
@@ -187,6 +209,8 @@ const VotingPage = () => {
       }
     } finally {
       setProcessing(false);
+      setProcessingMessage('');
+      setProcessingSubMessage('');
     }
   };
 
@@ -195,7 +219,9 @@ const VotingPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-6">
+    <>
+      <LoadingModal isOpen={processing} message={processingMessage} subMessage={processingSubMessage} />
+      <div className="min-h-screen bg-slate-50 py-12 px-6">
       <div className="max-w-3xl mx-auto">
         
         {/* Header */}
@@ -392,6 +418,7 @@ const VotingPage = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

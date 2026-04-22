@@ -2,12 +2,14 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import api from "../utils/api";
+import LoadingModal from "../components/common/LoadingModal";
 
 const STATES = ["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Delhi","Jammu & Kashmir","Ladakh","Puducherry"];
 
 export default function Register() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
   const [form, setForm] = useState({
     fullName: "", email: "", password: "", confirmPassword: "",
     voterID: "", aadharNumber: "", age: "", gender: "",
@@ -45,6 +47,7 @@ export default function Register() {
     }
     
     setLoading(true);
+    setLoadingMessage('Creating your voter account...');
     try {
       const { confirmPassword, ...payload } = form;
       await api.post("/auth/register", { ...payload, age: Number(payload.age) });
@@ -54,11 +57,14 @@ export default function Register() {
       toast.error(err.response?.data?.message || "Registration failed");
     } finally {
       setLoading(false);
+      setLoadingMessage('');
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4">
+    <>
+      <LoadingModal isOpen={loading} message={loadingMessage} subMessage="Setting up your voter profile" />
+      <div className="min-h-screen bg-slate-50 py-12 px-4">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="text-center mb-10">
@@ -315,5 +321,6 @@ export default function Register() {
         </div>
       </div>
     </div>
+    </>
   );
 }

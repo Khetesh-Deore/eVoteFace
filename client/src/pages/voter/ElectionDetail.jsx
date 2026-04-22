@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useElection } from '../../context/ElectionContext';
 import api from '../../utils/api';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import LoadingModal from '../../components/common/LoadingModal';
 import { toast } from 'react-toastify';
 
 const ElectionDetail = () => {
@@ -19,6 +20,7 @@ const ElectionDetail = () => {
   const [loading, setLoading] = useState(true);
   const [requestingRegistration, setRequestingRegistration] = useState(false);
   const [walletAddressInput, setWalletAddressInput] = useState('');
+  const [actionMessage, setActionMessage] = useState('');
 
   useEffect(() => {
     loadElectionData();
@@ -66,6 +68,7 @@ const ElectionDetail = () => {
 
     try {
       setRequestingRegistration(true);
+      setActionMessage('Submitting registration request...');
       
       await api.post(`/voters/elections/${electionId}/request-registration`, {
         walletAddress: walletAddressInput
@@ -78,6 +81,7 @@ const ElectionDetail = () => {
       toast.error(error.response?.data?.message || 'Failed to request registration');
     } finally {
       setRequestingRegistration(false);
+      setActionMessage('');
     }
   };
 
@@ -128,7 +132,9 @@ const ElectionDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10 px-6">
+    <>
+      <LoadingModal isOpen={requestingRegistration} message={actionMessage} subMessage="Your request will be reviewed by the admin" />
+      <div className="min-h-screen bg-slate-50 py-10 px-6">
       <div className="max-w-screen-2xl mx-auto">
         
         {/* Back Button */}
@@ -353,6 +359,7 @@ const ElectionDetail = () => {
         )}
       </div>
     </div>
+    </>
   );
 };
 
