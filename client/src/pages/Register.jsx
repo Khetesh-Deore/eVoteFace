@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import api from "../utils/api";
 import LoadingModal from "../components/common/LoadingModal";
+import { Eye, EyeOff } from "lucide-react";
 
 const STATES = ["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Delhi","Jammu & Kashmir","Ladakh","Puducherry"];
 
@@ -10,6 +11,8 @@ export default function Register() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [form, setForm] = useState({
     fullName: "", email: "", password: "", confirmPassword: "",
     voterID: "", aadharNumber: "", age: "", gender: "",
@@ -27,6 +30,10 @@ export default function Register() {
     }
     if (form.password.length < 8) {
       toast.error("Password must be at least 8 characters"); 
+      return;
+    }
+    if (!/^[A-Z]{3}[A-Z0-9]*\d+$/.test(form.voterID)) {
+      toast.error("Voter ID must start with 3 uppercase letters and end with at least one number (e.g. ABC1234567)");
       return;
     }
     if (form.contactNumber.length !== 10 || !/^\d{10}$/.test(form.contactNumber)) {
@@ -184,6 +191,7 @@ export default function Register() {
                     className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500 text-slate-900" 
                     placeholder="e.g. ABC1234567" 
                   />
+                  <p className="text-xs text-slate-400 mt-1.5">3 uppercase letters followed by numbers (e.g. ABC1234567)</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Aadhaar Number *</label>
@@ -265,27 +273,47 @@ export default function Register() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Password *</label>
-                  <input 
-                    name="password" 
-                    type="password" 
-                    value={form.password} 
-                    onChange={set} 
-                    required 
-                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500 text-slate-900" 
-                    placeholder="Minimum 8 characters" 
-                  />
+                  <div className="relative">
+                    <input 
+                      name="password" 
+                      type={showPassword ? "text" : "password"}
+                      value={form.password} 
+                      onChange={set} 
+                      required 
+                      className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500 text-slate-900 pr-14" 
+                      placeholder="Minimum 8 characters" 
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(p => !p)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">Confirm Password *</label>
-                  <input 
-                    name="confirmPassword" 
-                    type="password" 
-                    value={form.confirmPassword} 
-                    onChange={set} 
-                    required 
-                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500 text-slate-900" 
-                    placeholder="Re-enter password" 
-                  />
+                  <div className="relative">
+                    <input 
+                      name="confirmPassword" 
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={form.confirmPassword} 
+                      onChange={set} 
+                      required 
+                      className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:border-emerald-500 text-slate-900 pr-14" 
+                      placeholder="Re-enter password" 
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(p => !p)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      tabIndex={-1}
+                    >
+                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
