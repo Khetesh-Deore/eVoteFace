@@ -13,7 +13,7 @@
  *   6. Reports exactly what is wrong and how to fix it
  */
 
-require("dotenv").config();
+require("dotenv").config({ path: require("path").join(__dirname, "../.env") });
 const dns = require("dns");
 const net = require("net");
 const mongoose = require("mongoose");
